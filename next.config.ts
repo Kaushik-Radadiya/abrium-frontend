@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'icons-ckg.pages.dev' },
       { protocol: 'https', hostname: 'assets.coingecko.com' },
+      { protocol: 'https', hostname: 'iconic.dynamic-static-assets.com' },
     ],
   },
 };

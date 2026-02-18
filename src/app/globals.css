@@ -11,6 +11,9 @@
   --topbar-border: #d9dfeb;
   --crumbs: #677084;
 
+  --neutral-text-textWeak: #6B6B6B;
+  --neutral-text-textStrong: #0A0A0A;
+
   --wallet-btn-border: #b9c3d3;
   --wallet-btn-text: #0f172a;
   --wallet-btn-bg: #eef2f8;
@@ -188,6 +191,9 @@
   --panel: #141414;
   --topbar-border: #1c1f25;
   --crumbs: #9ca2ad;
+
+  --neutral-text-textWeak: #A3A3A3;
+  --neutral-text-textStrong: #FAFAFA;
 
   --wallet-btn-border: #d7d8db;
   --wallet-btn-text: #101114;

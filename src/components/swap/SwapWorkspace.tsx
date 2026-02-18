@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Ghost, ChevronDown } from 'lucide-react';
 import { isAddress } from 'viem';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { DEFAULT_CHAIN_ID, SUPPORTED_CHAINS } from '@/lib/chains';
@@ -8,6 +9,8 @@ import { simulateSwap, SimulationResponse } from '@/lib/api';
 import { TokenPill } from '@/components/swap/TokenPill';
 import { TokenSelectorModal } from '@/components/swap/TokenSelectorModal';
 import { useSwapData } from '@/components/swap/hooks/useSwapData';
+import { WalletTrigger } from '@/components/WalletTrigger';
+import Image from 'next/image';
 
 type SelectorTarget = 'from' | 'to' | null;
 
@@ -28,11 +31,13 @@ const ALERT_TONE_CLASS: Record<UiAlert['level'], string> = {
 const MUTED_CLASS = 'text-[13px] text-[var(--muted)]';
 const TOKEN_BOX_CLASS =
   'grid gap-2 rounded-[14px] border border-[var(--swap-token-border)] bg-[var(--swap-token-bg)] p-3';
+
+const TOKEN_TOP_WALLET_CLASS = 'flex items-center gap-2 py-2.5 px-4';
 const TOKEN_SECTION_CLASS =
-  'grid gap-1 rounded-[16px] border border-[var(--swap-token-border)] bg-[var(--swap-panel-bg)] px-2.5 pb-2.5 pt-2';
+  'grid gap-1 rounded-[16px] border border-[var(--swap-token-border)] bg-[var(--swap-panel-bg)]';
 
 export function SwapWorkspace() {
-  const { primaryWallet } = useDynamicContext();
+  const { primaryWallet, setShowAuthFlow } = useDynamicContext();
   const walletAddress = primaryWallet?.address;
 
   const [chainId, setChainId] = useState(DEFAULT_CHAIN_ID);
@@ -195,27 +200,29 @@ export function SwapWorkspace() {
   }, [risk, riskError]);
 
   return (
-    <section className="mx-auto grid w-full max-w-[460px] gap-3">
-      <div className="grid gap-2.5 rounded-[18px] border border-[var(--swap-panel-border)] bg-[var(--swap-panel-bg)] p-[14px] text-[var(--swap-panel-text)]">
-        {tokenRiskAlert ? (
-          <div
-            className={`flex items-start gap-[10px] rounded-[10px] border px-3 py-[10px] ${ALERT_TONE_CLASS[tokenRiskAlert.level]}`}
-          >
-            <div className="mt-[2px] grid size-4 place-items-center rounded-full border border-current text-[10px] font-bold [line-height:1]">
-              !
-            </div>
-            <div className="grid gap-[2px]">
-              <strong className="text-xs leading-[1.3]">
-                {tokenRiskAlert.title}
-              </strong>
-              <span className="text-xs leading-[1.35]">
-                {tokenRiskAlert.message}
-              </span>
-            </div>
+    <section className="mx-auto gap-3 space-y-4">
+      {tokenRiskAlert ? (
+        <div
+          className={`flex items-start gap-[10px] rounded-[10px] border px-3 py-[10px] ${ALERT_TONE_CLASS[tokenRiskAlert.level]}`}
+        >
+          <div className="mt-[2px] grid size-4 place-items-center rounded-full border border-current text-[10px] font-bold [line-height:1]">
+            !
           </div>
-        ) : null}
-
+          <div className="grid gap-[2px]">
+            <strong className="text-xs leading-[1.3]">
+              {tokenRiskAlert.title}
+            </strong>
+            <span className="text-xs leading-[1.35]">
+              {tokenRiskAlert.message}
+            </span>
+          </div>
+        </div>
+      ) : null}
+      <div className="grid gap-2.5">
         <div className={TOKEN_SECTION_CLASS}>
+          <div className={TOKEN_TOP_WALLET_CLASS}>
+            <WalletTrigger />
+          </div>
           <div className={TOKEN_BOX_CLASS}>
             <div className="text-[16px] leading-none text-[var(--muted)]">
               Send
@@ -250,6 +257,9 @@ export function SwapWorkspace() {
         </button>
 
         <div className={TOKEN_SECTION_CLASS}>
+          <div className={TOKEN_TOP_WALLET_CLASS}>
+            <WalletTrigger />
+          </div>
           <div className={TOKEN_BOX_CLASS}>
             <div className="text-[16px] leading-none text-[var(--muted)]">
               Receive
