@@ -7,7 +7,7 @@
   --muted: #5f6778;
   --border: #d6dbe6;
 
-  --panel: #ffffff;
+  --panel: #fafafa;
   --topbar-border: #d9dfeb;
   --crumbs: #677084;
 
@@ -181,11 +181,11 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
   --bg: #070809;
-  --text: #f1f1f1;
+  --text: #fafafa;
   --muted: #8f95a3;
   --border: #2b3038;
 
-  --panel: #0f1013;
+  --panel: #141414;
   --topbar-border: #1c1f25;
   --crumbs: #9ca2ad;
 
