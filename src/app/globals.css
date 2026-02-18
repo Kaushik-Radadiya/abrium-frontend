@@ -1,26 +1,327 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  color-scheme: light;
+  --bg: #f3f5f9;
+  --text: #111827;
+  --muted: #5f6778;
+  --border: #d6dbe6;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --panel: #ffffff;
+  --topbar-border: #d9dfeb;
+  --crumbs: #677084;
+
+  --wallet-btn-border: #b9c3d3;
+  --wallet-btn-text: #0f172a;
+  --wallet-btn-bg: #eef2f8;
+
+  --swap-panel-bg: #ffffff;
+  --swap-panel-border: #d5dcea;
+  --swap-panel-text: #111827;
+  --swap-token-border: #d8deea;
+  --swap-token-bg: #f8fafc;
+  --swap-amount: #0f172a;
+  --swap-divider-bg: #eef2f8;
+  --swap-divider-border: #ced7e5;
+  --swap-action-bg: #111827;
+  --swap-action-text: #ffffff;
+
+  --token-pill-border: #ccd5e4;
+  --token-pill-bg: #eef2f8;
+  --token-pill-text: #0f172a;
+  --token-pill-muted: #5f6778;
+  --token-icon-bg: #dae3f2;
+  --token-icon-text: #0f172a;
+  --token-pill-chain-badge-border: #f8fafd;
+  --token-pill-chain-badge-bg: #5a7dea;
+  --token-pill-chain-badge-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+
+  --modal-backdrop: rgba(15, 23, 42, 0.45);
+  --modal-border: #cfd8e5;
+  --modal-bg: #f8fafd;
+  --modal-text: #0f172a;
+  --ghost-text: #5e6a80;
+
+  --search-row-border: #cfd8e6;
+  --search-row-bg: linear-gradient(90deg, #f2f6fc 0%, #eef3fb 100%);
+  --search-text: #111827;
+  --search-placeholder: #69748a;
+
+  --network-chevron: #758099;
+  --network-menu-border: #cfd8e5;
+  --network-menu-bg: #f7f9fd;
+  --network-menu-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  --network-item-text: #374151;
+  --network-item-hover-bg: #e8edf6;
+  --network-item-hover-border: #c8d2e2;
+  --network-item-active-bg: #dde6f4;
+  --network-item-active-border: #aebad0;
+  --network-item-active-text: #111827;
+
+  --token-list-border: #d7deea;
+  --token-row-text: #111827;
+  --token-row-hover-bg: #edf2f9;
+  --token-row-hover-border: #cdd6e4;
+  --token-row-import-border: #8ebea7;
+  --token-row-import-bg: #e8f5ef;
+  --chain-badge-border: #f8fafd;
+  --chain-badge-bg: #dfe7f4;
+
+  --scroll-track: #e6ebf3;
+  --scroll-thumb: #b7c2d5;
+  --scroll-thumb-hover: #9eabc3;
+
+  --shimmer-a: #e5ebf5;
+  --shimmer-b: #d7dfec;
+  --shimmer-c: #e5ebf5;
+  --skeleton-border: #cfd8e8;
+
+  --warning-bg: #fff8eb;
+  --alert-error-text: #8a2515;
+  --alert-error-border: #e5b0a7;
+  --alert-error-bg: #fff1ee;
+  --alert-warning-text: #7a5503;
+  --alert-warning-border: #e5cf9e;
+  --alert-warning-bg: #fff8e7;
+  --alert-info-text: #1f4f87;
+  --alert-info-border: #9bc0ea;
+  --alert-info-bg: #eff6ff;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #070809;
+    --text: #f1f1f1;
+    --muted: #8f95a3;
+    --border: #2b3038;
+
+    --panel: #0f1013;
+    --topbar-border: #1c1f25;
+    --crumbs: #9ca2ad;
+
+    --wallet-btn-border: #d7d8db;
+    --wallet-btn-text: #101114;
+    --wallet-btn-bg: #f4f4f4;
+
+    --swap-panel-bg: #0d0d0f;
+    --swap-panel-border: #24252a;
+    --swap-panel-text: #f0f0f0;
+    --swap-token-border: #2b2c30;
+    --swap-token-bg: #141518;
+    --swap-amount: #f4f4f4;
+    --swap-divider-bg: #1d1f24;
+    --swap-divider-border: #30333a;
+    --swap-action-bg: #f6f6f7;
+    --swap-action-text: #0d0d0f;
+
+    --token-pill-border: #262626;
+    --token-pill-bg: #141414;
+    --token-pill-text: #ececec;
+    --token-pill-muted: #9ea1ab;
+    --token-icon-bg: #293246;
+    --token-icon-text: #fff;
+    --token-pill-chain-badge-border: #0f1013;
+    --token-pill-chain-badge-bg: #5a7dea;
+    --token-pill-chain-badge-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+
+    --modal-backdrop: rgba(0, 0, 0, 0.65);
+    --modal-border: #2b2c31;
+    --modal-bg: #141417;
+    --modal-text: #f2f2f2;
+    --ghost-text: #c9c9c9;
+
+    --search-row-border: #2c2f36;
+    --search-row-bg: linear-gradient(90deg, #1b1c20 0%, #1a1b1f 100%);
+    --search-text: #ececec;
+    --search-placeholder: #a2a6b1;
+
+    --network-chevron: #a3a9b6;
+    --network-menu-border: #323744;
+    --network-menu-bg: #181a1f;
+    --network-menu-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+    --network-item-text: #d4d8e2;
+    --network-item-hover-bg: #242933;
+    --network-item-hover-border: #353b49;
+    --network-item-active-bg: #2c3240;
+    --network-item-active-border: #4a5367;
+    --network-item-active-text: #f8f9fb;
+
+    --token-list-border: #25262b;
+    --token-row-text: #f3f3f3;
+    --token-row-hover-bg: #1d1f24;
+    --token-row-hover-border: #30333a;
+    --token-row-import-border: #2f5e49;
+    --token-row-import-bg: #13251d;
+    --chain-badge-border: #111317;
+    --chain-badge-bg: #20242d;
+
+    --scroll-track: #14171d;
+    --scroll-thumb: #4b5263;
+    --scroll-thumb-hover: #60697e;
+
+    --shimmer-a: #20232b;
+    --shimmer-b: #2a2f39;
+    --shimmer-c: #20232b;
+    --skeleton-border: #2d3240;
+
+    --warning-bg: #fff9f2;
+    --alert-error-text: #ffb2a8;
+    --alert-error-border: #5e1e15;
+    --alert-error-bg: #34100b;
+    --alert-warning-text: #f9cb7d;
+    --alert-warning-border: #5e4315;
+    --alert-warning-bg: #36250b;
+    --alert-info-text: #9bc7ff;
+    --alert-info-border: #174176;
+    --alert-info-bg: #081f3b;
   }
 }
 
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #070809;
+  --text: #f1f1f1;
+  --muted: #8f95a3;
+  --border: #2b3038;
+
+  --panel: #0f1013;
+  --topbar-border: #1c1f25;
+  --crumbs: #9ca2ad;
+
+  --wallet-btn-border: #d7d8db;
+  --wallet-btn-text: #101114;
+  --wallet-btn-bg: #f4f4f4;
+
+  --swap-panel-bg: #0d0d0f;
+  --swap-panel-border: #24252a;
+  --swap-panel-text: #f0f0f0;
+  --swap-token-border: #2b2c30;
+  --swap-token-bg: #141518;
+  --swap-amount: #f4f4f4;
+  --swap-divider-bg: #1d1f24;
+  --swap-divider-border: #30333a;
+  --swap-action-bg: #f6f6f7;
+  --swap-action-text: #0d0d0f;
+
+  --token-pill-border: #262626;
+  --token-pill-bg: #141414;
+  --token-pill-text: #ececec;
+  --token-pill-muted: #9ea1ab;
+  --token-icon-bg: #293246;
+  --token-icon-text: #fff;
+  --token-pill-chain-badge-border: #0f1013;
+  --token-pill-chain-badge-bg: #5a7dea;
+  --token-pill-chain-badge-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+
+  --modal-backdrop: rgba(0, 0, 0, 0.65);
+  --modal-border: #2b2c31;
+  --modal-bg: #141417;
+  --modal-text: #f2f2f2;
+  --ghost-text: #c9c9c9;
+
+  --search-row-border: #2c2f36;
+  --search-row-bg: linear-gradient(90deg, #1b1c20 0%, #1a1b1f 100%);
+  --search-text: #ececec;
+  --search-placeholder: #a2a6b1;
+
+  --network-chevron: #a3a9b6;
+  --network-menu-border: #323744;
+  --network-menu-bg: #181a1f;
+  --network-menu-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --network-item-text: #d4d8e2;
+  --network-item-hover-bg: #242933;
+  --network-item-hover-border: #353b49;
+  --network-item-active-bg: #2c3240;
+  --network-item-active-border: #4a5367;
+  --network-item-active-text: #f8f9fb;
+
+  --token-list-border: #25262b;
+  --token-row-text: #f3f3f3;
+  --token-row-hover-bg: #1d1f24;
+  --token-row-hover-border: #30333a;
+  --token-row-import-border: #2f5e49;
+  --token-row-import-bg: #13251d;
+  --chain-badge-border: #111317;
+  --chain-badge-bg: #20242d;
+
+  --scroll-track: #14171d;
+  --scroll-thumb: #4b5263;
+  --scroll-thumb-hover: #60697e;
+
+  --shimmer-a: #20232b;
+  --shimmer-b: #2a2f39;
+  --shimmer-c: #20232b;
+  --skeleton-border: #2d3240;
+
+  --warning-bg: #fff9f2;
+  --alert-error-text: #ffb2a8;
+  --alert-error-border: #5e1e15;
+  --alert-error-bg: #34100b;
+  --alert-warning-text: #f9cb7d;
+  --alert-warning-border: #5e4315;
+  --alert-warning-bg: #36250b;
+  --alert-info-text: #9bc7ff;
+  --alert-info-border: #174176;
+  --alert-info-bg: #081f3b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  cursor: pointer;
+}
+
+.dynamic-wallet button {
+  border-radius: 999px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--wallet-btn-border);
+  color: var(--wallet-btn-text);
+  background: var(--wallet-btn-bg);
+  font-weight: 600;
+}
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+  border-radius: 999px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid var(--scroll-track);
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
 }

@@ -1,8 +1,13 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  reactCompiler: false,
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'icons-ckg.pages.dev' },
+      { protocol: 'https', hostname: 'assets.coingecko.com' },
+    ],
+  },
 };
 
 export default nextConfig;
