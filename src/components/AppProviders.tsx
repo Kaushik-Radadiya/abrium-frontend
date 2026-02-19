@@ -83,7 +83,6 @@ const applyDynamicRpcOverrides = (
 
 const dynamicSettings = {
   environmentId: dynamicEnvironmentId,
-  initialAuthenticationMode: 'connect-only' as const,
   social: { strategy: 'popup' as const },
   walletConnectors: [EthereumWalletConnectors],
   useMetamaskSdk: false,
