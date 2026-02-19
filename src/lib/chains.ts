@@ -70,7 +70,7 @@ const ALL_SUPPORTED_CHAINS: SupportedChain[] = [
 ];
 
 export const SUPPORTED_CHAINS: SupportedChain[] = ALL_SUPPORTED_CHAINS.filter(
-  (chain) => NETWORK_SCOPE === 'all' || chain.scope === NETWORK_SCOPE,
+  (chain) => chain.scope === NETWORK_SCOPE,
 );
 
 export const DEFAULT_CHAIN_ID = SUPPORTED_CHAINS[0]?.id ?? 1;

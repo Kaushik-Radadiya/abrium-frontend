@@ -1,0 +1,34 @@
+diff --git a/src/lib/components/EmbeddedWalletExport/EmbeddedWalletExport.cjs b/src/lib/components/EmbeddedWalletExport/EmbeddedWalletExport.cjs
+index 3156cabaf86da0fdebe12e6dd3c20f25ccaff082..45215e05de6d2f9f16840dce31fdfdca9f425ddb 100644
+--- a/src/lib/components/EmbeddedWalletExport/EmbeddedWalletExport.cjs
++++ b/src/lib/components/EmbeddedWalletExport/EmbeddedWalletExport.cjs
+@@ -17,7 +17,11 @@ const EmbeddedWalletExport = ({ wallet, isTurnkeyWallet, isWaasWallet, data, onI
+     const setIframeContainerRef = (element) => {
+         iframeContainerRef.current = element;
+         if (element && onIframeContainerRef) {
+-            onIframeContainerRef(element);
++            // Defer to avoid "Maximum update depth exceeded" - calling onIframeContainerRef
++            // (a setState) synchronously during React's ref commit phase causes an
++            // infinite loop with React 19. setTimeout defers the call to the next
++            // event loop turn, after React has fully completed its commit phase.
++            setTimeout(function () { onIframeContainerRef(element); }, 0);
+         }
+     };
+     usePromise.usePromise(() => _tslib.__awaiter(void 0, void 0, void 0, function* () {
+diff --git a/src/lib/components/EmbeddedWalletExport/EmbeddedWalletExport.js b/src/lib/components/EmbeddedWalletExport/EmbeddedWalletExport.js
+index bebaf3987029a0e03f296ed36a894f2245f9af46..44e023b505f0b15d84db43df7dec3fa8a7d187c5 100644
+--- a/src/lib/components/EmbeddedWalletExport/EmbeddedWalletExport.js
++++ b/src/lib/components/EmbeddedWalletExport/EmbeddedWalletExport.js
+@@ -13,7 +13,11 @@ const EmbeddedWalletExport = ({ wallet, isTurnkeyWallet, isWaasWallet, data, onI
+     const setIframeContainerRef = (element) => {
+         iframeContainerRef.current = element;
+         if (element && onIframeContainerRef) {
+-            onIframeContainerRef(element);
++            // Defer to avoid "Maximum update depth exceeded" - calling onIframeContainerRef
++            // (a setState) synchronously during React's ref commit phase causes an
++            // infinite loop with React 19. setTimeout defers the call to the next
++            // event loop turn, after React has fully completed its commit phase.
++            setTimeout(() => onIframeContainerRef(element), 0);
+         }
+     };
+     usePromise(() => __awaiter(void 0, void 0, void 0, function* () {
