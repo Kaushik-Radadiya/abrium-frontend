@@ -15,7 +15,7 @@ const ALL_SUPPORTED_CHAINS: SupportedChain[] = [
     name: 'Ethereum',
     rpcUrls: [
       process.env.NEXT_PUBLIC_RPC_ETH_MAINNET ??
-        'https://ethereum-rpc.publicnode.com',
+      'https://ethereum-rpc.publicnode.com',
       'https://eth-mainnet.public.blastapi.io',
     ],
     explorerUrl: 'https://etherscan.io',
@@ -27,7 +27,7 @@ const ALL_SUPPORTED_CHAINS: SupportedChain[] = [
     name: 'Polygon',
     rpcUrls: [
       process.env.NEXT_PUBLIC_RPC_POLYGON ??
-        'https://polygon-bor-rpc.publicnode.com',
+      'https://polygon-bor-rpc.publicnode.com',
       'https://polygon-rpc.com',
     ],
     explorerUrl: 'https://polygonscan.com',
@@ -39,7 +39,7 @@ const ALL_SUPPORTED_CHAINS: SupportedChain[] = [
     name: 'Sepolia',
     rpcUrls: [
       process.env.NEXT_PUBLIC_RPC_SEPOLIA ??
-        'https://ethereum-sepolia-rpc.publicnode.com',
+      'https://ethereum-sepolia-rpc.publicnode.com',
     ],
     explorerUrl: 'https://sepolia.etherscan.io',
     nativeSymbol: 'ETH',
@@ -50,7 +50,7 @@ const ALL_SUPPORTED_CHAINS: SupportedChain[] = [
     name: 'Polygon Amoy',
     rpcUrls: [
       process.env.NEXT_PUBLIC_RPC_POLYGON_AMOY ??
-        'https://rpc-amoy.polygon.technology',
+      'https://rpc-amoy.polygon.technology',
     ],
     explorerUrl: 'https://amoy.polygonscan.com',
     nativeSymbol: 'POL',
@@ -77,4 +77,16 @@ export const DEFAULT_CHAIN_ID = SUPPORTED_CHAINS[0]?.id ?? 1;
 
 export function getChain(chainId: number) {
   return SUPPORTED_CHAINS.find((chain) => chain.id === chainId);
+}
+
+export const STARGATE_CHAIN_KEY_BY_ID: Record<number, string> = {
+  1: 'ethereum',
+  137: 'polygon',
+  11155111: 'ethereum',
+  80002: 'polygon',
+  84532: 'base',
+};
+
+export function getChainKey(chainId: number) {
+  return STARGATE_CHAIN_KEY_BY_ID[chainId] ?? '';
 }

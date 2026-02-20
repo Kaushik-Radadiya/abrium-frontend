@@ -1,10 +1,14 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+
 import { SupportedChain } from '@/lib/chains'
 import { UiToken } from '@/lib/tokens'
 import { getChainIconUrl, getTokenIconUrl } from '@/lib/icons'
 import { IconWithFallback } from '@/components/swap/IconWithFallback'
 import { displayBalance, shortAddress } from '@/components/swap/utils'
+import { ChevronDownIcon, ChevronUpIcon, CrossIcon, SearchIcon, X } from 'lucide-react'
 
 type RuntimeNetwork = {
   chain: SupportedChain
@@ -34,7 +38,7 @@ type Props = {
   onClose: () => void
 }
 
-const MUTED_CLASS = 'text-[13px] text-[var(--muted)]'
+const MUTED_CLASS = 'text-xs uppercase text-[var(--neutral-text-textWeak)]'
 const TOKEN_ICON_CLASS =
   'relative grid h-8 w-8 place-items-center overflow-visible rounded-full border-0 bg-[var(--token-icon-bg)] text-xs font-bold text-[var(--token-icon-text)]'
 
@@ -70,177 +74,216 @@ export function TokenSelectorModal({
   importError,
   onClose,
 }: Props) {
-  if (!open) return null
-
   const currentChainKey = resolveChainKey(chainId, selectedChainKey || undefined)
   const currentChainIcon = selectedChainIcon ?? getChainIconUrl(currentChainKey)
 
-  return (
-    <div
-      className='fixed inset-0 z-[60] grid place-items-center bg-[var(--modal-backdrop)] p-4'
-      onClick={onClose}
-    >
-      <div
-        className='grid h-[min(700px,85vh)] w-full max-w-[430px] grid-rows-[auto_auto_1fr] overflow-hidden rounded-[18px] border border-[var(--modal-border)] bg-[var(--modal-bg)] text-[var(--modal-text)]'
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className='flex items-center justify-between px-[14px] pb-1.5 pt-[14px]'>
-          <h3>Select a token</h3>
-          <button
-            type='button'
-            className='min-h-0 border-0 bg-transparent p-0 text-[22px] text-[var(--ghost-text)]'
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
+  const networkMenuRef = useRef<HTMLDivElement>(null)
+  const networkButtonRef = useRef<HTMLButtonElement>(null)
 
-        <div className='mx-[14px] flex min-h-14 items-center gap-2.5 rounded-full border border-[var(--search-row-border)] bg-[var(--search-row-bg)] px-3 py-0'>
-          <span className='text-lg leading-none opacity-70' aria-hidden='true'>
-            🔍
-          </span>
-          <input
-            className='min-h-0 flex-1 border-0 bg-transparent p-0 text-lg text-[var(--search-text)] outline-none placeholder:text-[var(--search-placeholder)]'
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder='Search tokens or paste address'
-          />
-          <div className='relative ml-auto'>
-            <button
-              type='button'
-              className='inline-flex min-h-[34px] min-w-[54px] items-center justify-end gap-2 rounded-[10px] border-0 bg-transparent p-0 text-[var(--search-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--network-item-active-border)]'
-              onClick={() => setNetworkMenuOpen(!networkMenuOpen)}
-            >
-              <span className='inline-flex items-center'>
-                {currentChainIcon ? (
-                  <span className='relative h-[30px] w-[30px] overflow-hidden rounded-full border-0'>
-                    <IconWithFallback
-                      src={currentChainIcon}
-                      alt={currentChainKey}
-                      fallback={currentChainKey[0]?.toUpperCase() ?? 'N'}
-                      sizes='30px'
-                    />
-                  </span>
-                ) : null}
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        networkMenuOpen &&
+        networkMenuRef.current &&
+        !networkMenuRef.current.contains(event.target as Node) &&
+        networkButtonRef.current &&
+        !networkButtonRef.current.contains(event.target as Node)
+      ) {
+        setNetworkMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [networkMenuOpen, setNetworkMenuOpen])
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className='fixed inset-0 z-[110] grid place-items-center bg-[var(--modal-backdrop)] p-4'
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.1 }}
+        >
+          <motion.div
+            className='flex flex-col h-[min(700px,85vh)] w-full gap-2 max-w-[430px] overflow-hidden rounded-[18px] border border-[var(--swap-token-border)] bg-[var(--neutral-background-raised)] text-[var(--modal-text)]'
+            onClick={(event) => event.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.1 }}
+          >
+            <div className='flex items-center justify-between px-4 pt-4'>
+              <div className='text-lg font-normal'>Select a token</div>
+              <button
+                type='button'
+                className='min-h-0 border-0 bg-transparent p-0 text-[22px] text-[var(--ghost-text)]'
+                onClick={onClose}
+              >
+                <X className='text-[var(--arrow-icon-btn)]' />
+              </button>
+            </div>
+
+            <div className='mx-[14px] flex py-1 px-3 items-center gap-2.5 rounded-full border border-[var(--search-row-border)] bg-[var(--search-row-bg)]'>
+              <span className='text-lg leading-none opacity-70' aria-hidden='true'>
+                <SearchIcon className='text-[var(--arrow-icon-btn)] size-5' />
               </span>
-              <span className='text-sm leading-none text-[var(--network-chevron)]'>
-                {networkMenuOpen ? '▴' : '▾'}
-              </span>
-            </button>
-            {networkMenuOpen ? (
-              <div className='thin-scrollbar absolute right-0 top-[calc(100%+8px)] z-40 grid max-h-[min(62vh,420px)] w-[220px] gap-0.5 overflow-y-auto rounded-xl border border-[var(--network-menu-border)] bg-[var(--network-menu-bg)] p-1.5 shadow-[var(--network-menu-shadow)]'>
-                {networks.map((network) => (
-                  <button
-                    key={`network-${network.chain.id}`}
-                    type='button'
-                    className={`min-h-[34px] rounded-lg border px-2.5 text-left ${
-                      network.chain.id === chainId
-                        ? 'border-[var(--network-item-active-border)] bg-[var(--network-item-active-bg)] text-[var(--network-item-active-text)]'
-                        : 'border-transparent bg-transparent text-[var(--network-item-text)] hover:border-[var(--network-item-hover-border)] hover:bg-[var(--network-item-hover-bg)]'
-                    }`}
-                    onClick={() => {
-                      onChainSelect(network.chain.id)
-                      setNetworkMenuOpen(false)
-                    }}
-                  >
-                    <span className='inline-flex items-center gap-2'>
-                      <span className='relative h-[30px] w-[30px] overflow-hidden rounded-full border-0'>
+              <input
+                className='min-h-0 flex-1 border-0 bg-transparent p-0 text-base text-[var(--neutral-text-textWeek)] outline-none placeholder:text-[var(--neutral-text-placeholder)]'
+                value={query}
+                onChange={(event) => onQueryChange(event.target.value)}
+                placeholder='Search tokens or paste address'
+              />
+              <div className='relative ml-auto flex justify-center'>
+                <button
+                  ref={networkButtonRef}
+                  type='button'
+                  className='inline-flex min-h-[34px] min-w-[54px] items-center justify-end gap-2 rounded-[10px] border-0 bg-transparent p-0 text-[var(--search-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--network-item-active-border)]'
+                  onClick={() => setNetworkMenuOpen(!networkMenuOpen)}
+                >
+                  <span className='inline-flex items-center'>
+                    {currentChainIcon ? (
+                      <span className='relative size-4 overflow-hidden rounded-full border-0'>
                         <IconWithFallback
-                          src={getChainIconUrl(
-                            resolveChainKey(network.chain.id, network.chainKey),
-                          )}
-                          alt={network.chain.name}
-                          fallback={network.chain.name[0] ?? 'N'}
+                          src={currentChainIcon}
+                          alt={currentChainKey}
+                          fallback={currentChainKey[0]?.toUpperCase() ?? 'N'}
                           sizes='30px'
                         />
                       </span>
-                      {network.chain.name}
-                    </span>
-                  </button>
-                ))}
+                    ) : null}
+                  </span>
+                  <span className='text-sm leading-none text-[var(--network-chevron)]'>
+                    {networkMenuOpen ? <ChevronUpIcon className='text-[var(--arrow-icon-btn)] size-4' /> : <ChevronDownIcon className='text-[var(--arrow-icon-btn)] size-4' />}
+                  </span>
+                </button>
+                {networkMenuOpen ? (
+                  <motion.div
+                    ref={networkMenuRef}
+                    className='thin-scrollbar absolute -right-2 top-10 z-40 grid max-h-[min(62vh,420px)] w-[220px] gap-0.5 overflow-y-auto rounded-xl border border-[var(--neutral-border)] bg-[var(--neutral-background)] p-1.5'
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {networks.map((network) => (
+                      <button
+                        key={`network-${network.chain.id}`}
+                        type='button'
+                        className={`rounded-lg border flex py-1 px-2.5 text-left ${network.chain.id === chainId
+                          ? 'border-none bg-[var(--neutral-background-raised-hover)] text-[var(--network-item-active-text)]'
+                          : 'border-transparent bg-transparent text-[var(--network-item-text)] hover:bg-[var(--neutral-background-raised-hover)]'
+                          }`}
+                        onClick={() => {
+                          onChainSelect(network.chain.id)
+                          setNetworkMenuOpen(false)
+                        }}
+                      >
+                        <span className='inline-flex items-center gap-2'>
+                          <span className='relative size-5 overflow-hidden rounded-full border-0'>
+                            <IconWithFallback
+                              src={getChainIconUrl(
+                                resolveChainKey(network.chain.id, network.chainKey),
+                              )}
+                              alt={network.chain.name}
+                              fallback={network.chain.name[0] ?? 'N'}
+                              sizes='30px'
+                            />
+                          </span>
+                          {network.chain.name}
+                        </span>
+                      </button>
+                    ))}
+                  </motion.div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
-        </div>
+            </div>
 
-        <div className='thin-scrollbar grid min-h-0 auto-rows-max content-start gap-1 overflow-auto border-t border-[var(--token-list-border)] px-2 pb-2.5 pt-1 [scrollbar-gutter:stable]'>
-          {loadingDynamicTokens && tokens.length === 0 ? (
-            <>
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div
-                  key={`skeleton-${index}`}
-                  className='pointer-events-none flex min-h-14 items-center justify-between rounded-xl border border-transparent bg-transparent px-2 py-1.5'
+            <div className='thin-scrollbar grid min-h-0 auto-rows-max content-start gap-1 overflow-auto px-2 pb-2.5 pt-1 me-1'>
+              {loadingDynamicTokens && tokens.length === 0 ? (
+                <>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div
+                      key={`skeleton-${index}`}
+                      className='pointer-events-none flex min-h-14 items-center justify-between rounded-xl border border-transparent bg-transparent px-2 py-1.5'
+                    >
+                      <div className='flex items-center gap-2.5'>
+                        <span className='h-8 w-8 rounded-full border border-[var(--skeleton-border)] bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                        <div className='grid gap-1.5'>
+                          <span className='inline-block h-2.5 w-[170px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                          <span className='inline-block h-2.5 w-[110px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                        </div>
+                      </div>
+                      <span className='inline-block h-2.5 w-[42px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                    </div>
+                  ))}
+                </>
+              ) : null}
+
+              {tokens.map((token) => (
+                <button
+                  key={`list-${token.address}`}
+                  type='button'
+                  className='flex min-h-14 w-full items-center justify-between rounded-xl border border-transparent bg-transparent px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]'
+                  onClick={() => onSelectToken(token.address)}
                 >
                   <div className='flex items-center gap-2.5'>
-                    <span className='h-8 w-8 rounded-full border border-[var(--skeleton-border)] bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
-                    <div className='grid gap-1.5'>
-                      <span className='inline-block h-2.5 w-[170px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
-                      <span className='inline-block h-2.5 w-[110px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                    <span className={TOKEN_ICON_CLASS}>
+                      <IconWithFallback
+                        src={token.logoURI ?? getTokenIconUrl(token.symbol)}
+                        alt={token.symbol}
+                        fallback={token.symbol[0]}
+                      />
+                      {selectedChainIcon ? (
+                        <span className='absolute bottom-0 right-0 grid h-4 w-4 place-items-center overflow-hidden rounded-full border-2 border-[var(--chain-badge-border)] bg-[var(--chain-badge-bg)]'>
+                          <IconWithFallback
+                            src={selectedChainIcon}
+                            alt={selectedChainKey}
+                            fallback=''
+                            showFallback={false}
+                            sizes='16px'
+                          />
+                        </span>
+                      ) : null}
+                    </span>
+                    <div className='flex flex-col gap-1'>
+                      <div className='text-base font-medium text-[var(--neutral-text)]'>{token.symbol}</div>
+                      <div className={MUTED_CLASS}>
+                        {token.name}{' '}
+                        {token.address === 'native' ? '' : shortAddress(token.address)}
+                      </div>
                     </div>
                   </div>
-                  <span className='inline-block h-2.5 w-[42px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
-                </div>
-              ))}
-            </>
-          ) : null}
-
-          {tokens.map((token) => (
-            <button
-              key={`list-${token.address}`}
-              type='button'
-              className='flex min-h-14 w-full items-center justify-between rounded-xl border border-transparent bg-transparent px-2 py-1.5 text-left text-[var(--token-row-text)] hover:border-[var(--token-row-hover-border)] hover:bg-[var(--token-row-hover-bg)]'
-              onClick={() => onSelectToken(token.address)}
-            >
-              <div className='flex items-center gap-2.5'>
-                <span className={TOKEN_ICON_CLASS}>
-                  <IconWithFallback
-                    src={token.logoURI ?? getTokenIconUrl(token.symbol)}
-                    alt={token.symbol}
-                    fallback={token.symbol[0]}
-                  />
-                  {selectedChainIcon ? (
-                    <span className='absolute bottom-0 right-0 grid h-4 w-4 place-items-center overflow-hidden rounded-full border-2 border-[var(--chain-badge-border)] bg-[var(--chain-badge-bg)]'>
-                      <IconWithFallback
-                        src={selectedChainIcon}
-                        alt={selectedChainKey}
-                        fallback=''
-                        showFallback={false}
-                        sizes='16px'
-                      />
-                    </span>
-                  ) : null}
-                </span>
-                <div>
-                  <div>{token.symbol}</div>
                   <div className={MUTED_CLASS}>
-                    {token.name}{' '}
-                    {token.address === 'native' ? '' : shortAddress(token.address)}
+                    {displayBalance(balances[token.address.toLowerCase()])}
                   </div>
-                </div>
-              </div>
-              <div className={MUTED_CLASS}>
-                {displayBalance(balances[token.address.toLowerCase()])}
-              </div>
-            </button>
-          ))}
+                </button>
+              ))}
 
-          {canImport ? (
-            <button
-              type='button'
-              className='flex min-h-14 w-full items-center justify-between rounded-xl border border-[var(--token-row-import-border)] bg-[var(--token-row-import-bg)] px-2 py-1.5 text-left text-[var(--token-row-text)]'
-              disabled={importing}
-              onClick={onImportToken}
-            >
-              <div>
-                <div>{importing ? 'Importing...' : 'Import token by address'}</div>
-                <div className={MUTED_CLASS}>{shortAddress(importAddress)}</div>
-              </div>
-            </button>
-          ) : null}
+              {canImport ? (
+                <button
+                  type='button'
+                  className='flex min-h-14 w-full items-center justify-between rounded-xl border border-[var(--token-row-import-border)] bg-[var(--token-row-import-bg)] px-2 py-1.5 text-left text-[var(--token-row-text)]'
+                  disabled={importing}
+                  onClick={onImportToken}
+                >
+                  <div>
+                    <div>{importing ? 'Importing...' : 'Import token by address'}</div>
+                    <div className={MUTED_CLASS}>{shortAddress(importAddress)}</div>
+                  </div>
+                </button>
+              ) : null}
 
-          {importError ? <p className={MUTED_CLASS}>{importError}</p> : null}
-        </div>
-      </div>
-    </div>
+              {importError ? <p className={MUTED_CLASS}>{importError}</p> : null}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

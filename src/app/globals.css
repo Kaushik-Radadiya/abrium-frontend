@@ -11,8 +11,19 @@
   --topbar-border: #d9dfeb;
   --crumbs: #677084;
 
+  --arrow-icon-btn: #6B6B6B;
+  --neutral-text: #0A0A0A;
   --neutral-text-textWeak: #6B6B6B;
   --neutral-text-textStrong: #0A0A0A;
+  --neutral-text-placeholder: #A3A3A3;
+
+
+  --neutral-border: #E5E5E5;
+
+  --neutral-background: #FFFFFF;
+  --neutral-background-raised: #FAFAFA;
+  --neutral-background-strong: #0A0A0A;
+  --neutral-background-raised-hover: #f0f0f0;
 
   --wallet-btn-border: #b9c3d3;
   --wallet-btn-text: #0f172a;
@@ -57,7 +68,7 @@
   --network-item-text: #374151;
   --network-item-hover-bg: #e8edf6;
   --network-item-hover-border: #c8d2e2;
-  --network-item-active-bg: #dde6f4;
+  --network-item-active-bg: #0f0f0f;
   --network-item-active-border: #aebad0;
   --network-item-active-text: #111827;
 
@@ -83,9 +94,9 @@
   --alert-error-text: #8a2515;
   --alert-error-border: #e5b0a7;
   --alert-error-bg: #fff1ee;
-  --alert-warning-text: #7a5503;
-  --alert-warning-border: #e5cf9e;
-  --alert-warning-bg: #fff8e7;
+  --alert-warning-text: #6B6B6B;
+  --alert-warning-border: #F59E0B;
+  --alert-warning-bg: #FEF3C7;
   --alert-info-text: #1f4f87;
   --alert-info-border: #9bc0ea;
   --alert-info-bg: #eff6ff;
@@ -98,6 +109,19 @@
     --text: #f1f1f1;
     --muted: #8f95a3;
     --border: #2b3038;
+
+    --neutral-text: #FAFAFA;
+    --neutral-text-textWeak: #A3A3A3;
+    --neutral-text-textStrong: #FAFAFA;
+    --neutral-text-placeholder: #333333;
+
+    --neutral-border: #262626;
+
+    --neutral-background: #0A0A0A;
+    --neutral-background-raised: #141414;
+    --neutral-background-strong: #FAFAFA;
+    --neutral-background-raised-hover: #1f1f1f;
+    --arrow-icon-btn: #7f7f7f;
 
     --panel: #0f1013;
     --topbar-border: #1c1f25;
@@ -146,7 +170,7 @@
     --network-item-text: #d4d8e2;
     --network-item-hover-bg: #242933;
     --network-item-hover-border: #353b49;
-    --network-item-active-bg: #2c3240;
+    --network-item-active-bg: #0f0f0f;
     --network-item-active-border: #4a5367;
     --network-item-active-text: #f8f9fb;
 
@@ -172,8 +196,8 @@
     --alert-error-text: #ffb2a8;
     --alert-error-border: #5e1e15;
     --alert-error-bg: #34100b;
-    --alert-warning-text: #f9cb7d;
-    --alert-warning-border: #5e4315;
+    --alert-warning-text: #A3A3A3;
+    --alert-warning-border: #734900;
     --alert-warning-bg: #36250b;
     --alert-info-text: #9bc7ff;
     --alert-info-border: #174176;
@@ -192,8 +216,25 @@
   --topbar-border: #1c1f25;
   --crumbs: #9ca2ad;
 
+  --neutral-text: #FAFAFA;
   --neutral-text-textWeak: #A3A3A3;
   --neutral-text-textStrong: #FAFAFA;
+  --neutral-text-placeholder: #333333;
+
+
+  --neutral-border: #262626;
+
+
+  --neutral-background: #0A0A0A;
+  --neutral-background-raised: #141414;
+  --neutral-background-strong: #FAFAFA;
+
+  --neutral-background-raised-hover: #1f1f1f;
+  --arrow-icon-btn: #7f7f7f;
+
+
+
+
 
   --wallet-btn-border: #d7d8db;
   --wallet-btn-text: #101114;
@@ -238,7 +279,7 @@
   --network-item-text: #d4d8e2;
   --network-item-hover-bg: #242933;
   --network-item-hover-border: #353b49;
-  --network-item-active-bg: #2c3240;
+  --network-item-active-bg: #272729;
   --network-item-active-border: #4a5367;
   --network-item-active-text: #f8f9fb;
 
@@ -264,8 +305,8 @@
   --alert-error-text: #ffb2a8;
   --alert-error-border: #5e1e15;
   --alert-error-bg: #34100b;
-  --alert-warning-text: #f9cb7d;
-  --alert-warning-border: #5e4315;
+  --alert-warning-text: #A3A3A3;
+  --alert-warning-border: #734900;
   --alert-warning-bg: #36250b;
   --alert-info-text: #9bc7ff;
   --alert-info-border: #174176;
@@ -298,36 +339,11 @@ button {
   cursor: pointer;
 }
 
-.dynamic-wallet button {
-  border-radius: 999px;
-  min-height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--wallet-btn-border);
-  color: var(--wallet-btn-text);
-  background: var(--wallet-btn-bg);
-  font-weight: 600;
-}
-
-.thin-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
-}
-
 .thin-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
 
-.thin-scrollbar::-webkit-scrollbar-track {
-  background: var(--scroll-track);
-  border-radius: 999px;
-}
-
 .thin-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--scroll-thumb);
+  background: var(--arrow-icon-btn);
   border-radius: 999px;
-  border: 2px solid var(--scroll-track);
-}
-
-.thin-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--scroll-thumb-hover);
 }

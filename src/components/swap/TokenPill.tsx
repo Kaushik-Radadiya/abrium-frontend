@@ -4,6 +4,7 @@ import { UiToken } from '@/lib/tokens'
 import { getTokenIconUrl } from '@/lib/icons'
 import { IconWithFallback } from '@/components/swap/IconWithFallback'
 import { getChain } from '@/lib/chains'
+import { ChevronDown } from 'lucide-react'
 
 type Props = {
   token?: UiToken
@@ -30,11 +31,11 @@ export function TokenPill({
 
   return (
     <button
-      className='inline-flex h-16 min-w-[136px] max-w-[220px] w-fit items-center justify-between gap-2 justify-self-end rounded-full border border-[var(--token-pill-border)] bg-[var(--token-pill-bg)] pl-1 pr-2 text-[var(--token-pill-text)]'
+      className='border border-[var(--neutral-border)] rounded-full p-2 flex items-center gap-3'
       type='button'
       onClick={onClick}
     >
-      <span className='inline-flex items-center gap-1.5'>
+      <span className='inline-flex items-center gap-3'>
         <span className='relative grid h-12 w-12 place-items-center overflow-visible rounded-full border-0 bg-[var(--token-icon-bg)] text-sm font-bold text-[var(--token-icon-text)]'>
           <IconWithFallback
             src={token ? token.logoURI ?? getTokenIconUrl(token.symbol) : undefined}
@@ -53,17 +54,17 @@ export function TokenPill({
             </span>
           ) : null}
         </span>
-        <span className='grid text-left leading-[1]'>
-          <span className='whitespace-nowrap text-[30px] font-semibold tracking-[-0.02em]'>
+        <span className='flex flex-col gap-1 items-start'>
+          <span className='whitespace-nowrap text-base font-medium text-[var(--neutral-text)]'>
             {token?.symbol ?? 'Select'}
           </span>
-          <span className='text-[11px] uppercase text-[var(--token-pill-muted)]'>
+          <span className='text-xs uppercase text-[var(--neutral-text-textWeak)]'>
             {chainLabel}
           </span>
         </span>
       </span>
       <span className='text-sm leading-none text-[var(--token-pill-muted)]'>
-        ▾
+        <ChevronDown size={16} />
       </span>
     </button>
   )

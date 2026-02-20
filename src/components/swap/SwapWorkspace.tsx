@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Ghost, ChevronDown } from 'lucide-react';
+import { ArrowDownUp, CircleAlert, X } from 'lucide-react';
 import { isAddress } from 'viem';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { DEFAULT_CHAIN_ID, SUPPORTED_CHAINS } from '@/lib/chains';
@@ -10,7 +10,6 @@ import { TokenPill } from '@/components/swap/TokenPill';
 import { TokenSelectorModal } from '@/components/swap/TokenSelectorModal';
 import { useSwapData } from '@/components/swap/hooks/useSwapData';
 import { WalletTrigger } from '@/components/WalletTrigger';
-import Image from 'next/image';
 
 type SelectorTarget = 'from' | 'to' | null;
 
@@ -18,6 +17,7 @@ type UiAlert = {
   level: 'error' | 'warning' | 'info';
   title: string;
   message: string;
+  icon?: React.ReactNode;
 };
 
 const ALERT_TONE_CLASS: Record<UiAlert['level'], string> = {
@@ -30,11 +30,11 @@ const ALERT_TONE_CLASS: Record<UiAlert['level'], string> = {
 
 const MUTED_CLASS = 'text-[13px] text-[var(--muted)]';
 const TOKEN_BOX_CLASS =
-  'grid gap-2 rounded-[14px] border border-[var(--swap-token-border)] bg-[var(--swap-token-bg)] p-3';
+  'grid gap-2 rounded-[14px] border border-[var(--swap-token-border)] bg-[var(--neutral-background-raised)] p-4';
 
 const TOKEN_TOP_WALLET_CLASS = 'flex items-center gap-2 py-2.5 px-4';
 const TOKEN_SECTION_CLASS =
-  'grid gap-1 rounded-[16px] border border-[var(--swap-token-border)] bg-[var(--swap-panel-bg)]';
+  'grid gap-1 rounded-[16px] border border-[var(--swap-token-border)] bg-[var(--neutral-background)]';
 
 export function SwapWorkspace() {
   const { primaryWallet, setShowAuthFlow } = useDynamicContext();
@@ -188,6 +188,7 @@ export function SwapWorkspace() {
         level: 'warning',
         title: 'Token risk check delayed',
         message: riskError,
+        icon: <CircleAlert color='#eb7e00' size={20} />
       };
     }
 
@@ -200,93 +201,90 @@ export function SwapWorkspace() {
   }, [risk, riskError]);
 
   return (
-    <section className="mx-auto gap-3 space-y-4">
+    <section className="mx-auto max-w-[440px] w-full gap-3 space-y-4">
       {tokenRiskAlert ? (
         <div
-          className={`flex items-start gap-[10px] rounded-[10px] border px-3 py-[10px] ${ALERT_TONE_CLASS[tokenRiskAlert.level]}`}
+          className={`flex items-center gap-4 rounded-lg border p-4 ${ALERT_TONE_CLASS[tokenRiskAlert.level]}`}
         >
-          <div className="mt-[2px] grid size-4 place-items-center rounded-full border border-current text-[10px] font-bold [line-height:1]">
-            !
-          </div>
-          <div className="grid gap-[2px]">
-            <strong className="text-xs leading-[1.3]">
-              {tokenRiskAlert.title}
-            </strong>
-            <span className="text-xs leading-[1.35]">
+          {tokenRiskAlert.icon}
+          <div className="grid gap-1">
+            <span className="text-base font-normal">
               {tokenRiskAlert.message}
             </span>
           </div>
+          <button className="text-[var(--neutral-text-textWeak)]">
+            <X size={20} />
+          </button>
         </div>
       ) : null}
-      <div className="grid gap-2.5">
-        <div className={TOKEN_SECTION_CLASS}>
-          <div className={TOKEN_TOP_WALLET_CLASS}>
-            <WalletTrigger />
-          </div>
-          <div className={TOKEN_BOX_CLASS}>
-            <div className="text-[16px] leading-none text-[var(--muted)]">
-              Send
+      <div className="grid gap-6">
+        <div className="grid gap-1">
+          <div className={TOKEN_SECTION_CLASS}>
+            <div className={TOKEN_TOP_WALLET_CLASS}>
+              <WalletTrigger />
             </div>
-            <div className="mt-1 grid grid-cols-[1fr_auto] items-end gap-3">
-              <div className="grid gap-1.5">
-                <input
-                  className="h-auto min-h-0 border-0 bg-transparent p-0 text-[52px] font-semibold leading-[0.95] text-[var(--swap-amount)] outline-none placeholder:text-[var(--muted)]"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                  placeholder="0.0"
-                />
-                <div className="text-[14px] text-[var(--muted)]">~$0 ⇅</div>
+            <div className={TOKEN_BOX_CLASS}>
+              <div className="text-[16px] leading-none text-[var(--neutral-text-textWeak)]">
+                Send
               </div>
-              <TokenPill
-                token={selectedFromToken}
-                selectedChainIcon={selectedChainIcon}
-                selectedChainKey={selectedChainKey}
-                onClick={() => setSelectorTarget('from')}
-              />
-            </div>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="-my-5 z-10 grid h-[52px] w-[52px] place-items-center self-center justify-self-center rounded-full border border-[var(--swap-divider-border)] bg-[var(--swap-divider-bg)] text-[24px] shadow-[0_0_0_3px_var(--swap-panel-bg)]"
-          onClick={onFlipTokens}
-          aria-label="Swap from and to tokens"
-        >
-          ⇅
-        </button>
-
-        <div className={TOKEN_SECTION_CLASS}>
-          <div className={TOKEN_TOP_WALLET_CLASS}>
-            <WalletTrigger />
-          </div>
-          <div className={TOKEN_BOX_CLASS}>
-            <div className="text-[16px] leading-none text-[var(--muted)]">
-              Receive
-            </div>
-            <div className="mt-1 grid grid-cols-[1fr_auto] items-end gap-3">
-              <div className="grid gap-1.5">
-                <div className="flex min-h-12 items-center text-[52px] font-semibold leading-[0.95] text-[var(--swap-amount)]">
-                  0.0
+              <div className="grid grid-cols-[1fr_auto] items-end gap-3">
+                <div className="grid gap-1.5">
+                  <input
+                    className="h-auto min-h-0 border-0 bg-transparent p-0 w-full font-normal font-mono text-3xl text-[var(--swap-amount)] outline-none placeholder:text-[var(--neutral-text-placeholder)]"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    placeholder="0.0"
+                  />
+                  <div className="text-xs flex items-center gap-1 text-[var(--neutral-text-textWeak)]">~$0 <ArrowDownUp className="size-3" /></div>
                 </div>
-                <div className="text-[14px] text-[var(--muted)]">~$0 ⇅</div>
+                <TokenPill
+                  token={selectedFromToken}
+                  selectedChainIcon={selectedChainIcon}
+                  selectedChainKey={selectedChainKey}
+                  onClick={() => setSelectorTarget('from')}
+                />
               </div>
-              <TokenPill
-                token={selectedToToken}
-                selectedChainIcon={selectedChainIcon}
-                selectedChainKey={selectedChainKey}
-                onClick={() => setSelectorTarget('to')}
-              />
+            </div>
+          </div>
+          <button
+            type="button"
+            className="-my-5 z-100 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
+            onClick={onFlipTokens}
+            aria-label="Swap from and to tokens"
+          >
+            <ArrowDownUp className="text-[var(--arrow-icon-btn)] size-4" />
+          </button>
+          <div className={TOKEN_SECTION_CLASS}>
+            <div className={TOKEN_TOP_WALLET_CLASS}>
+              <WalletTrigger />
+            </div>
+            <div className={TOKEN_BOX_CLASS}>
+              <div className="text-[16px] leading-none text-[var(--neutral-text-textWeak)]">
+                Receive
+              </div>
+              <div className="grid grid-cols-[1fr_auto] items-end gap-3">
+                <div className="grid gap-1.5">
+                  <div className="flex min-h-12 items-center text-3xl font-normal font-mono text-[var(--neutral-text-placeholder)]">
+                    0.0
+                  </div>
+                  <div className="text-xs flex items-center gap-1 text-[var(--neutral-text-textWeak)]">~$0 <ArrowDownUp className="size-3" /></div>
+                </div>
+                <TokenPill
+                  token={selectedToToken}
+                  selectedChainIcon={selectedChainIcon}
+                  selectedChainKey={selectedChainKey}
+                  onClick={() => setSelectorTarget('to')}
+                />
+              </div>
             </div>
           </div>
         </div>
 
         <button
-          className="min-h-[46px] rounded-full border-0 bg-[var(--swap-action-bg)] px-4 font-bold text-[var(--swap-action-text)] disabled:cursor-not-allowed disabled:opacity-60"
-          onClick={onReview}
-          disabled={loadingSimulation}
+          className="rounded-full border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base disabled:opacity-50 disabled:!cursor-not-allowed"
+          onClick={() => primaryWallet ? onReview() : setShowAuthFlow(true)}
         >
-          {loadingSimulation ? 'Running simulation...' : 'Review'}
+          {primaryWallet ? 'Review' : 'Connect Wallet'}
         </button>
 
         {simulation ? (

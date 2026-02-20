@@ -9,7 +9,10 @@ import {
   isAddress,
 } from 'viem';
 import { baseSepolia, mainnet, polygon, polygonAmoy, sepolia } from 'viem/chains';
-import { SupportedChain } from '@/lib/chains';
+import {
+  SupportedChain,
+  getChainKey,
+} from '@/lib/chains';
 import { listTokensForChain, UiToken } from '@/lib/tokens';
 import { fetchTokenRisk, TokenRiskResponse } from '@/lib/api';
 import { fetchStargateNetworks, fetchStargateTokens } from '@/lib/stargate';
@@ -42,14 +45,6 @@ const BALANCE_REFRESH_MS = 30_000;
 const MAX_BALANCE_TOKENS = 30;
 const EMPTY_TOKENS: UiToken[] = [];
 
-const STARGATE_CHAIN_KEY_BY_ID: Record<number, string> = {
-  1: 'ethereum',
-  137: 'polygon',
-  11155111: 'ethereum',
-  80002: 'polygon',
-  84532: 'base',
-};
-
 function getViemChain(chainId: number) {
   if (chainId === mainnet.id) return mainnet;
   if (chainId === polygon.id) return polygon;
@@ -60,7 +55,7 @@ function getViemChain(chainId: number) {
 }
 
 function resolveChainKey(chainId: number, chainKey?: string) {
-  return chainKey ?? STARGATE_CHAIN_KEY_BY_ID[chainId] ?? '';
+  return chainKey ?? getChainKey(chainId);
 }
 
 export function useSwapData({
