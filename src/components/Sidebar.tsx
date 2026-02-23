@@ -34,7 +34,7 @@ export function Sidebar() {
         <nav>
           <ul className="flex flex-col gap-2">
             {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
-              const isActive = pathname === href;
+              const isActive = label === 'Swap';
               return (
                 <li key={label}>
                   <Link
