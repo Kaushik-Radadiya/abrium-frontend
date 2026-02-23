@@ -820,7 +820,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@dynamic-labs/sdk-react-core@patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#~/.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch":
+"@dynamic-labs/sdk-react-core@patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#./.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch":
   version: 4.61.5
   resolution: "@dynamic-labs/sdk-react-core@npm:4.61.5"
   dependencies:
@@ -5242,7 +5242,7 @@ __metadata:
   resolution: "abrium-frontend@workspace:."
   dependencies:
     "@dynamic-labs/ethereum": "npm:^4.29.4"
-    "@dynamic-labs/sdk-react-core": "patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#~/.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch"
+    "@dynamic-labs/sdk-react-core": "patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#./.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch"
     "@tailwindcss/postcss": "npm:^4"
     "@tanstack/react-query": "npm:^5.90.4"
     "@types/node": "npm:^20"
