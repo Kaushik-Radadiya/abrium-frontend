@@ -264,7 +264,7 @@ export function TokenSelectorModal({
                   className='flex min-h-14 w-full items-center justify-between rounded-xl border px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]'
                   onClick={() => onSelectToken(token.address)}
                 >
-                  <div className='flex items-center gap-2.5'>
+                  <div className='flex min-w-0 flex-1 items-center gap-2.5'>
                     <span className={TOKEN_ICON_CLASS}>
                       <IconWithFallback
                         src={token.logoURI ?? getTokenIconUrl(token.symbol)}
@@ -283,15 +283,19 @@ export function TokenSelectorModal({
                         </span>
                       ) : null}
                     </span>
-                    <div className='flex flex-col gap-1'>
-                      <div className='text-base font-medium text-[var(--neutral-text)]'>{token.symbol}</div>
-                      <div className={MUTED_CLASS}>
-                        {token.name}{' '}
-                        {token.address === 'native' ? '' : shortAddress(token.address)}
+                    <div className='min-w-0 flex flex-col gap-1'>
+                      <div className='truncate text-base font-medium text-[var(--neutral-text)]'>
+                        {token.symbol}
+                      </div>
+                      <div className={`${MUTED_CLASS} flex min-w-0 items-center gap-1`}>
+                        <span className='truncate'>{token.name}</span>
+                        {token.address === 'native' ? null : (
+                          <span className='shrink-0'>{shortAddress(token.address)}</span>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className={MUTED_CLASS}>
+                  <div className={`${MUTED_CLASS} shrink-0`}>
                     {displayBalance(balances[token.address.toLowerCase()])}
                   </div>
                 </Button>

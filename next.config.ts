@@ -1,15 +1,32 @@
 import type { NextConfig } from 'next';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const ASYNC_STORAGE_ALIAS = '@react-native-async-storage/async-storage';
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'wagmi',
+      '@tanstack/react-query',
+      'framer-motion',
+      '@dynamic-labs/sdk-react-core',
+      '@dynamic-labs/ethereum',
+    ],
+  },
   webpack: (config) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
-      '@react-native-async-storage/async-storage':
-        require.resolve('localforage'),
+      [ASYNC_STORAGE_ALIAS]: require.resolve('localforage'),
     };
     return config;
   },
-  turbopack: {},
+  turbopack: {
+    resolveAlias: {
+      [ASYNC_STORAGE_ALIAS]: 'localforage',
+    },
+  },
   reactCompiler: false,
   images: {
     remotePatterns: [
