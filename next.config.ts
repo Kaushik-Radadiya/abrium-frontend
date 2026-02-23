@@ -11,8 +11,6 @@ const nextConfig: NextConfig = {
       'wagmi',
       '@tanstack/react-query',
       'framer-motion',
-      '@dynamic-labs/sdk-react-core',
-      '@dynamic-labs/ethereum',
     ],
   },
   webpack: (config) => {
