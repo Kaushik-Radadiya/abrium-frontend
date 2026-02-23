@@ -8,6 +8,7 @@ type AlertLevel = 'error' | 'warning' | 'info';
 type Props = {
   risk: TokenRiskResponse | null;
   riskError: string | null;
+  onClose: () => void;
 };
 
 const ALERT_TONE_CLASS: Record<AlertLevel, string> = {
@@ -26,7 +27,7 @@ const RISK_BADGE_TONE_CLASS: Record<AlertLevel, string> = {
   info: 'text-[var(--alert-info-text)] border-[var(--alert-info-border)] bg-[var(--alert-info-bg)]',
 };
 
-export function TokenRiskAlert({ risk, riskError }: Props) {
+export function TokenRiskAlert({ risk, riskError, onClose }: Props) {
   if (!risk && !riskError) return null;
 
   const level: AlertLevel = riskError ? 'warning' : risk?.alertLevel ?? 'info';
@@ -63,6 +64,7 @@ export function TokenRiskAlert({ risk, riskError }: Props) {
         type="button"
         className="text-[var(--neutral-text-textWeak)]"
         aria-label="Close risk alert"
+        onClick={onClose}
       >
         <X size={20} />
       </button>

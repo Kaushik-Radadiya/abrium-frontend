@@ -187,7 +187,11 @@ export function SwapWorkspace() {
 
   return (
     <section className="mx-auto max-w-[440px] w-full gap-3 space-y-4">
-      <TokenRiskAlert risk={risk ?? null} riskError={riskError} />
+      <TokenRiskAlert
+        risk={risk ?? null}
+        riskError={riskError}
+        onClose={resetRiskCheck}
+      />
       <div className="grid gap-6">
         <div className="grid gap-1">
           <SwapTokenPanel
