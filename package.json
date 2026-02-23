@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@dynamic-labs/ethereum": "^4.29.4",
-    "@dynamic-labs/sdk-react-core": "patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#~/.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch",
+    "@dynamic-labs/sdk-react-core": "patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#./.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch",
     "@tanstack/react-query": "^5.90.4",
     "framer-motion": "^12.34.3",
     "localforage": "^1.10.0",
