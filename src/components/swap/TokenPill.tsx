@@ -5,6 +5,7 @@ import { getTokenIconUrl } from '@/lib/icons'
 import { IconWithFallback } from '@/components/swap/IconWithFallback'
 import { getChain } from '@/lib/chains'
 import { ChevronDown } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
 type Props = {
   token?: UiToken
@@ -30,8 +31,8 @@ export function TokenPill({
   const chainLabel = resolveChainLabel(token, selectedChainKey)
 
   return (
-    <button
-      className='border border-[var(--neutral-border)] rounded-full p-2 flex items-center gap-3'
+    <Button
+      className='!p-2 gap-3 !bg-transparent items-center'
       type='button'
       onClick={onClick}
     >
@@ -66,6 +67,6 @@ export function TokenPill({
       <span className='text-sm leading-none text-[var(--token-pill-muted)]'>
         <ChevronDown size={16} />
       </span>
-    </button>
+    </Button>
   )
 }

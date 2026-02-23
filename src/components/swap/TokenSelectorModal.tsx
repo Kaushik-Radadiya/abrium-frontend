@@ -9,6 +9,7 @@ import { getChainIconUrl, getTokenIconUrl } from '@/lib/icons'
 import { IconWithFallback } from '@/components/swap/IconWithFallback'
 import { displayBalance, shortAddress } from '@/components/swap/utils'
 import { ChevronDownIcon, ChevronUpIcon, SearchIcon, X } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
 type RuntimeNetwork = {
   chain: SupportedChain
@@ -141,13 +142,15 @@ export function TokenSelectorModal({
           >
             <div className='flex items-center justify-between px-4 pt-4'>
               <div className='text-lg font-normal'>Select a token</div>
-              <button
+              <Button
+                variant="ghost"
+                size="none"
                 type='button'
                 className='min-h-0 border-0 bg-transparent p-0 text-[22px] text-[var(--ghost-text)]'
                 onClick={onClose}
               >
                 <X className='text-[var(--arrow-icon-btn)]' />
-              </button>
+              </Button>
             </div>
 
             <div className='mx-[14px] flex py-1 px-3 items-center gap-2.5 rounded-full border border-[var(--search-row-border)] bg-[var(--search-row-bg)]'>
@@ -161,7 +164,9 @@ export function TokenSelectorModal({
                 placeholder='Search tokens or paste address'
               />
               <div className='relative ml-auto flex justify-center'>
-                <button
+                <Button
+                  variant="ghost"
+                  size="none"
                   ref={networkButtonRef}
                   type='button'
                   className='inline-flex min-h-[34px] min-w-[54px] items-center justify-end gap-2 rounded-[10px] border-0 bg-transparent p-0 text-[var(--search-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--network-item-active-border)]'
@@ -182,7 +187,7 @@ export function TokenSelectorModal({
                   <span className='text-sm leading-none text-[var(--network-chevron)]'>
                     {networkMenuOpen ? <ChevronUpIcon className='text-[var(--arrow-icon-btn)] size-4' /> : <ChevronDownIcon className='text-[var(--arrow-icon-btn)] size-4' />}
                   </span>
-                </button>
+                </Button>
                 {networkMenuOpen ? (
                   <motion.div
                     ref={networkMenuRef}
@@ -193,7 +198,9 @@ export function TokenSelectorModal({
                     transition={{ duration: 0.15 }}
                   >
                     {networks.map((network) => (
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="none"
                         key={`network-${network.chain.id}`}
                         type='button'
                         className={`rounded-lg border flex py-1 px-2.5 text-left ${network.chain.id === chainId
@@ -218,7 +225,7 @@ export function TokenSelectorModal({
                           </span>
                           {network.chain.name}
                         </span>
-                      </button>
+                      </Button>
                     ))}
                   </motion.div>
                 ) : null}
@@ -226,7 +233,7 @@ export function TokenSelectorModal({
             </div>
 
             <div
-              className='thin-scrollbar grid min-h-0 auto-rows-max content-start gap-1 overflow-auto px-2 pb-2.5 pt-1 me-1'
+              className='thin-scrollbar min-h-0 gap-1 overflow-auto px-2 pb-2.5 pt-1 me-1'
               onScroll={onTokenListScroll}
             >
               {loadingDynamicTokens && tokens.length === 0 ? (
@@ -250,10 +257,11 @@ export function TokenSelectorModal({
               ) : null}
 
               {visibleTokens.map((token) => (
-                <button
+                <Button
+                  size="none"
+                  variant='ghost'
                   key={`list-${token.address}`}
-                  type='button'
-                  className='flex min-h-14 w-full items-center justify-between rounded-xl border border-transparent bg-transparent px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]'
+                  className='flex min-h-14 w-full items-center justify-between rounded-xl border px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]'
                   onClick={() => onSelectToken(token.address)}
                 >
                   <div className='flex items-center gap-2.5'>
@@ -286,13 +294,15 @@ export function TokenSelectorModal({
                   <div className={MUTED_CLASS}>
                     {displayBalance(balances[token.address.toLowerCase()])}
                   </div>
-                </button>
+                </Button>
               ))}
 
               {canLoadMoreTokens ? (
-                <button
+                <Button
+                  variant="ghost"
+                  size="none"
                   type='button'
-                  className='mx-2 mt-1 rounded-lg border border-[var(--neutral-border)] px-3 py-2 text-left text-xs uppercase text-[var(--neutral-text-textWeak)] hover:bg-[var(--neutral-background-raised-hover)]'
+                  className='mx-2 justify-between mt-1 rounded-lg border border-[var(--neutral-border)] px-3 py-2 text-left text-xs uppercase text-[var(--neutral-text-textWeak)] hover:bg-[var(--neutral-background-raised-hover)]'
                   onClick={() =>
                     setVisibleCount((current) =>
                       Math.min(current + TOKENS_PAGE_SIZE, tokens.length),
@@ -300,11 +310,13 @@ export function TokenSelectorModal({
                   }
                 >
                   Show more tokens ({tokens.length - visibleTokens.length} remaining)
-                </button>
+                </Button>
               ) : null}
 
               {canImport ? (
-                <button
+                <Button
+                  variant="ghost"
+                  size="none"
                   type='button'
                   className='flex min-h-14 w-full items-center justify-between rounded-xl border border-[var(--token-row-import-border)] bg-[var(--token-row-import-bg)] px-2 py-1.5 text-left text-[var(--token-row-text)]'
                   disabled={importing}
@@ -314,7 +326,7 @@ export function TokenSelectorModal({
                     <div>{importing ? 'Importing...' : 'Import token by address'}</div>
                     <div className={MUTED_CLASS}>{shortAddress(importAddress)}</div>
                   </div>
-                </button>
+                </Button>
               ) : null}
 
               {importError ? <p className={MUTED_CLASS}>{importError}</p> : null}

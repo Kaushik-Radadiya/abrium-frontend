@@ -5,6 +5,7 @@ import './globals.css'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { WalletConnectCard } from '@/components/WalletConnectCard'
 import { ChevronRight } from 'lucide-react'
+import { inter } from '@/style/font'
 
 export const metadata: Metadata = {
   title: 'Abrium Frontend',
@@ -17,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en'>
+    <html lang='en' className={inter.className}>
       <body className='flex h-screen overflow-hidden bg-(--bg) text-(--text) antialiased'>
         <AppProviders>
           <Sidebar />

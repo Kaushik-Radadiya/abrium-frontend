@@ -2,6 +2,7 @@
 
 import { CircleAlert, X } from 'lucide-react';
 import type { TokenRiskResponse } from '@/lib/api';
+import { Button } from '@/components/ui/Button';
 
 type AlertLevel = 'error' | 'warning' | 'info';
 
@@ -60,14 +61,16 @@ export function TokenRiskAlert({ risk, riskError, onClose }: Props) {
           </div>
         ) : null}
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="none"
         type="button"
-        className="text-[var(--neutral-text-textWeak)]"
+        className="text-[var(--neutral-text-textWeak)] !p-0"
         aria-label="Close risk alert"
         onClick={onClose}
       >
         <X size={20} />
-      </button>
+      </Button>
     </div>
   );
 }

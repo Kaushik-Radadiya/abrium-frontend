@@ -10,6 +10,8 @@ import { TokenRiskAlert } from '@/components/swap/TokenRiskAlert';
 import { SwapTokenPanel } from '@/components/swap/SwapTokenPanel';
 import { TokenSelectorModal } from '@/components/swap/TokenSelectorModal';
 import { useSwapData } from '@/components/swap/hooks/useSwapData';
+import SwapTopPanel from './SwapTopPanel';
+import { Button } from '@/components/ui/Button';
 
 type SelectorTarget = 'from' | 'to' | null;
 
@@ -57,37 +59,28 @@ export function SwapWorkspace() {
     if (chainTokens.length === 0) return;
 
     const defaultFrom =
-      chainTokens.find((token) => token.address === 'native')?.address ??
-      chainTokens[0]?.address ??
-      'native';
+      chainTokens.find((t) => t.address === 'native')?.address ?? chainTokens[0]?.address ?? 'native';
 
-    const hasCurrentFrom = chainTokens.some(
-      (token) => token.address === fromToken,
-    );
+    const hasCurrentFrom = chainTokens.some((t) => t.address === fromToken);
     const nextFrom = hasCurrentFrom ? fromToken : defaultFrom;
 
-    const hasCurrentTo = chainTokens.some((token) => token.address === toToken);
+    const hasCurrentTo = chainTokens.some((t) => t.address === toToken);
     const initialTo =
-      chainTokens.find((token) => token.address !== nextFrom)?.address ??
-      nextFrom;
+      chainTokens.find((t) => t.address !== nextFrom)?.address ?? nextFrom;
     const nextTo = hasCurrentTo && toToken !== nextFrom ? toToken : initialTo;
 
-    if (nextFrom !== fromToken) {
-      setFromToken(nextFrom);
-    }
-    if (nextTo !== toToken) {
-      setToToken(nextTo);
-    }
+    if (nextFrom !== fromToken) setFromToken(nextFrom);
+    if (nextTo !== toToken) setToToken(nextTo);
   }, [chainTokens, fromToken, toToken]);
 
   const selectedFromToken = useMemo(
-    () => chainTokens.find((token) => token.address === fromToken),
-    [chainTokens, fromToken],
+    () => chainTokens.find((t) => t.address === fromToken),
+    [chainTokens, fromToken]
   );
 
   const selectedToToken = useMemo(
-    () => chainTokens.find((token) => token.address === toToken),
-    [chainTokens, toToken],
+    () => chainTokens.find((t) => t.address === toToken),
+    [chainTokens, toToken]
   );
 
   const filteredTokens = useMemo(() => {
@@ -105,44 +98,36 @@ export function SwapWorkspace() {
   const importAddress = query.trim().toLowerCase();
   const canImport =
     isAddress(importAddress) &&
-    !chainTokens.some((token) => token.address.toLowerCase() === importAddress);
+    !chainTokens.some((t) => t.address.toLowerCase() === importAddress);
 
   const onSelectToken = useCallback(
     (address: string) => {
-      if (selectorTarget === 'from') {
-        setFromToken(address);
-      }
-      if (selectorTarget === 'to') {
-        setToToken(address);
-      }
-
+      if (selectorTarget === 'from') setFromToken(address);
+      if (selectorTarget === 'to') setToToken(address);
       setSelectorTarget(null);
       setNetworkMenuOpen(false);
       setQuery('');
       setImportError(null);
     },
-    [selectorTarget],
+    [selectorTarget]
   );
 
   const onImportToken = useCallback(async () => {
     if (!isAddress(importAddress)) return;
-
     setImporting(true);
     setImportError(null);
     try {
       await importTokenByAddress(importAddress);
       onSelectToken(importAddress);
-    } catch (error) {
-      const message =
-        error instanceof Error && error.message
-          ? error.message
-          : 'Cannot import token metadata from RPC';
-      setImportError(message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Cannot import token metadata';
+      setImportError(msg);
     } finally {
       setImporting(false);
     }
   }, [importAddress, importTokenByAddress, onSelectToken]);
 
+  // ─── Review action ───────────────────────────────────────────
   const onReview = useCallback(async () => {
     if (!selectedFromToken || !selectedToToken) return;
     if (selectedToToken.address === 'native') {
@@ -204,14 +189,13 @@ export function SwapWorkspace() {
             editable
             onAmountChange={setAmount}
           />
-          <button
-            type="button"
-            className="-my-5 z-100 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
+          <Button
+            className="-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
             onClick={onFlipTokens}
-            aria-label="Swap from and to tokens"
+            aria-label="Swap tokens"
           >
             <ArrowDownUp className="text-[var(--arrow-icon-btn)] size-4" />
-          </button>
+          </Button>
           <SwapTokenPanel
             label="Receive"
             amount="0.0"
@@ -222,8 +206,8 @@ export function SwapWorkspace() {
           />
         </div>
 
-        <button
-          className="rounded-full border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base disabled:opacity-50 disabled:!cursor-not-allowed"
+        <Button
+          className="rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base"
           onClick={onPrimaryAction}
           disabled={primaryWallet ? !hasTokenSelection || isCheckingRisk : false}
         >
@@ -232,7 +216,7 @@ export function SwapWorkspace() {
               ? 'Checking risk...'
               : 'Review Swap'
             : 'Connect Wallet'}
-        </button>
+        </Button>
       </div>
 
       <TokenSelectorModal

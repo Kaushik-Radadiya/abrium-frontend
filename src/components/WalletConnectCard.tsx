@@ -5,6 +5,7 @@ import { ChevronDown } from 'lucide-react';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { getChainKey } from '@/lib/chains';
 import { getChainIconUrl } from '@/lib/icons';
+import { Button } from '@/components/ui/Button';
 
 export function WalletConnectCard() {
   const { primaryWallet, setShowAuthFlow, setShowDynamicUserProfile } =
@@ -24,12 +25,11 @@ export function WalletConnectCard() {
   }, [chainId]);
 
   return (
-    <button
-      type="button"
+    <Button
       onClick={() =>
         primaryWallet ? setShowDynamicUserProfile(true) : setShowAuthFlow(true)
       }
-      className={`flex items-center gap-2 rounded-full border border-(--neutral-border) px-3 py-2 text-sm ${address ? "bg-[var(--neutral-background-raised)]" : "bg-[var(--neutral-background-strong)]"}`}
+      className={`!text-sm justify-center ${address ? "" : "!bg-[var(--neutral-background-strong)]"}`}
     >
       {/* {primaryWallet?.connector?.metadata?.icon ? (
         <img
@@ -49,6 +49,6 @@ export function WalletConnectCard() {
 
       <span className={`text-sm font-medium ${address ? "text-[var(--neutral-text-textStrong)] font-mono" : "text-[var(--neutral-background)]"}`}>{shortAddress}</span>
       {address ? <ChevronDown size={14} className="opacity-60" /> : null}
-    </button>
+    </Button>
   );
 }
