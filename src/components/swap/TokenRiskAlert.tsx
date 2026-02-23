@@ -31,20 +31,24 @@ const RISK_BADGE_TONE_CLASS: Record<AlertLevel, string> = {
 export function TokenRiskAlert({ risk, riskError, onClose }: Props) {
   if (!risk && !riskError) return null;
 
-  const level: AlertLevel = riskError ? 'warning' : risk?.alertLevel ?? 'info';
+  const level: AlertLevel = riskError
+    ? 'warning'
+    : (risk?.alertLevel ?? 'info');
   const message = riskError || risk?.alertMessage || '';
   const badges = risk?.badges ?? [];
+  const showScore = risk ? risk.score !== null : false;
 
   return (
     <div
-      className={`flex items-center gap-4 rounded-lg border p-4 ${ALERT_TONE_CLASS[level]}`}
+      className={`flex items-center justify-between gap-4 rounded-lg border p-4 ${ALERT_TONE_CLASS[level]}`}
     >
       {riskError ? <CircleAlert color="#eb7e00" size={20} /> : null}
       <div className="grid gap-1">
         <span className="text-base font-normal">{message}</span>
         {risk ? (
           <span className="text-[11px] leading-[1.35] opacity-90">
-            Decision: {risk.decision} | Score: {risk.score}
+            Decision: {risk.decision}
+            {showScore ? ` | Score: ${risk.score}` : ''}
           </span>
         ) : null}
         {badges.length > 0 ? (
