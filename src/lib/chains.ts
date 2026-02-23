@@ -15,7 +15,7 @@ const ALL_SUPPORTED_CHAINS: SupportedChain[] = [
     name: 'Ethereum',
     rpcUrls: [
       process.env.NEXT_PUBLIC_RPC_ETH_MAINNET ??
-      'https://ethereum-rpc.publicnode.com',
+        'https://ethereum-rpc.publicnode.com',
       'https://eth-mainnet.public.blastapi.io',
     ],
     explorerUrl: 'https://etherscan.io',
@@ -27,7 +27,7 @@ const ALL_SUPPORTED_CHAINS: SupportedChain[] = [
     name: 'Polygon',
     rpcUrls: [
       process.env.NEXT_PUBLIC_RPC_POLYGON ??
-      'https://polygon-bor-rpc.publicnode.com',
+        'https://polygon-bor-rpc.publicnode.com',
       'https://polygon-rpc.com',
     ],
     explorerUrl: 'https://polygonscan.com',
@@ -39,7 +39,7 @@ const ALL_SUPPORTED_CHAINS: SupportedChain[] = [
     name: 'Sepolia',
     rpcUrls: [
       process.env.NEXT_PUBLIC_RPC_SEPOLIA ??
-      'https://ethereum-sepolia-rpc.publicnode.com',
+        'https://ethereum-sepolia-rpc.publicnode.com',
     ],
     explorerUrl: 'https://sepolia.etherscan.io',
     nativeSymbol: 'ETH',
@@ -50,7 +50,7 @@ const ALL_SUPPORTED_CHAINS: SupportedChain[] = [
     name: 'Polygon Amoy',
     rpcUrls: [
       process.env.NEXT_PUBLIC_RPC_POLYGON_AMOY ??
-      'https://rpc-amoy.polygon.technology',
+        'https://rpc-amoy.polygon.technology',
     ],
     explorerUrl: 'https://amoy.polygonscan.com',
     nativeSymbol: 'POL',

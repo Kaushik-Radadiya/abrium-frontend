@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { type UIEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { SupportedChain } from '@/lib/chains'
@@ -8,7 +8,7 @@ import { UiToken } from '@/lib/tokens'
 import { getChainIconUrl, getTokenIconUrl } from '@/lib/icons'
 import { IconWithFallback } from '@/components/swap/IconWithFallback'
 import { displayBalance, shortAddress } from '@/components/swap/utils'
-import { ChevronDownIcon, ChevronUpIcon, CrossIcon, SearchIcon, X } from 'lucide-react'
+import { ChevronDownIcon, ChevronUpIcon, SearchIcon, X } from 'lucide-react'
 
 type RuntimeNetwork = {
   chain: SupportedChain
@@ -41,6 +41,7 @@ type Props = {
 const MUTED_CLASS = 'text-xs uppercase text-[var(--neutral-text-textWeak)]'
 const TOKEN_ICON_CLASS =
   'relative grid h-8 w-8 place-items-center overflow-visible rounded-full border-0 bg-[var(--token-icon-bg)] text-xs font-bold text-[var(--token-icon-text)]'
+const TOKENS_PAGE_SIZE = 200
 
 function resolveChainKey(chainId: number, chainKey?: string) {
   if (chainKey) return chainKey
@@ -76,6 +77,13 @@ export function TokenSelectorModal({
 }: Props) {
   const currentChainKey = resolveChainKey(chainId, selectedChainKey || undefined)
   const currentChainIcon = selectedChainIcon ?? getChainIconUrl(currentChainKey)
+  const [visibleCount, setVisibleCount] = useState(TOKENS_PAGE_SIZE)
+  const hasSearchQuery = query.trim().length > 0
+  const visibleTokens = useMemo(() => {
+    if (hasSearchQuery) return tokens
+    return tokens.slice(0, visibleCount)
+  }, [hasSearchQuery, tokens, visibleCount])
+  const canLoadMoreTokens = !hasSearchQuery && visibleTokens.length < tokens.length
 
   const networkMenuRef = useRef<HTMLDivElement>(null)
   const networkButtonRef = useRef<HTMLButtonElement>(null)
@@ -98,6 +106,19 @@ export function TokenSelectorModal({
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [networkMenuOpen, setNetworkMenuOpen])
+
+  const onTokenListScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      if (!canLoadMoreTokens) return
+
+      const element = event.currentTarget
+      const remaining = element.scrollHeight - (element.scrollTop + element.clientHeight)
+      if (remaining > 120) return
+
+      setVisibleCount((current) => Math.min(current + TOKENS_PAGE_SIZE, tokens.length))
+    },
+    [canLoadMoreTokens, tokens.length],
+  )
 
   return (
     <AnimatePresence>
@@ -204,7 +225,10 @@ export function TokenSelectorModal({
               </div>
             </div>
 
-            <div className='thin-scrollbar grid min-h-0 auto-rows-max content-start gap-1 overflow-auto px-2 pb-2.5 pt-1 me-1'>
+            <div
+              className='thin-scrollbar grid min-h-0 auto-rows-max content-start gap-1 overflow-auto px-2 pb-2.5 pt-1 me-1'
+              onScroll={onTokenListScroll}
+            >
               {loadingDynamicTokens && tokens.length === 0 ? (
                 <>
                   {Array.from({ length: 6 }).map((_, index) => (
@@ -225,7 +249,7 @@ export function TokenSelectorModal({
                 </>
               ) : null}
 
-              {tokens.map((token) => (
+              {visibleTokens.map((token) => (
                 <button
                   key={`list-${token.address}`}
                   type='button'
@@ -264,6 +288,20 @@ export function TokenSelectorModal({
                   </div>
                 </button>
               ))}
+
+              {canLoadMoreTokens ? (
+                <button
+                  type='button'
+                  className='mx-2 mt-1 rounded-lg border border-[var(--neutral-border)] px-3 py-2 text-left text-xs uppercase text-[var(--neutral-text-textWeak)] hover:bg-[var(--neutral-background-raised-hover)]'
+                  onClick={() =>
+                    setVisibleCount((current) =>
+                      Math.min(current + TOKENS_PAGE_SIZE, tokens.length),
+                    )
+                  }
+                >
+                  Show more tokens ({tokens.length - visibleTokens.length} remaining)
+                </button>
+              ) : null}
 
               {canImport ? (
                 <button

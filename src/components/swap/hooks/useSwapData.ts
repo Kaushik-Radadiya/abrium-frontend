@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   createPublicClient,
   erc20Abi,
@@ -8,13 +9,15 @@ import {
   http,
   isAddress,
 } from 'viem';
-import { baseSepolia, mainnet, polygon, polygonAmoy, sepolia } from 'viem/chains';
 import {
-  SupportedChain,
-  getChainKey,
-} from '@/lib/chains';
+  baseSepolia,
+  mainnet,
+  polygon,
+  polygonAmoy,
+  sepolia,
+} from 'viem/chains';
+import { SupportedChain, getChainKey } from '@/lib/chains';
 import { listTokensForChain, UiToken } from '@/lib/tokens';
-import { fetchTokenRisk, TokenRiskResponse } from '@/lib/api';
 import { fetchStargateNetworks, fetchStargateTokens } from '@/lib/stargate';
 import { getChainIconUrl } from '@/lib/icons';
 import { dedupeTokens } from '@/components/swap/utils';
@@ -26,24 +29,26 @@ type RuntimeNetwork = {
   chainKey?: string;
 };
 
-type TokenMetadataCachePayload = {
-  tokensByChain: Record<number, UiToken[]>;
-  updatedAtByChain: Record<number, number>;
-};
-
 type Params = {
   chainId: number;
   staticChains: SupportedChain[];
   walletAddress?: string;
+  selectedFromToken?: string;
   selectedToToken?: string;
 };
 
 const IMPORT_CACHE_KEY = 'abrium.imported.tokens.v1';
-const TOKEN_METADATA_CACHE_KEY = 'abrium.token.metadata.cache.v1';
+const STARGATE_NETWORKS_CACHE_KEY = 'abrium.stargate.networks.v1';
+const STARGATE_TOKENS_CACHE_PREFIX = 'abrium.stargate.tokens.v1';
 const TOKEN_METADATA_CACHE_TTL_MS = 30 * 60 * 1000;
 const BALANCE_REFRESH_MS = 30_000;
-const MAX_BALANCE_TOKENS = 30;
 const EMPTY_TOKENS: UiToken[] = [];
+const EMPTY_RUNTIME_NETWORKS: RuntimeNetwork[] = [];
+
+type TimedCache<T> = {
+  updatedAt: number;
+  data: T;
+};
 
 function getViemChain(chainId: number) {
   if (chainId === mainnet.id) return mainnet;
@@ -54,46 +59,111 @@ function getViemChain(chainId: number) {
   return mainnet;
 }
 
-function resolveChainKey(chainId: number, chainKey?: string) {
-  return chainKey ?? getChainKey(chainId);
+function createChainClient(chainId: number, rpcUrl: string) {
+  return createPublicClient({
+    chain: getViemChain(chainId),
+    transport: http(rpcUrl),
+  });
+}
+
+function readLocalStorageJson<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(key);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function readImportedTokensCache() {
+  return readLocalStorageJson<ImportedState>(IMPORT_CACHE_KEY) ?? {};
+}
+
+function readTimedLocalCache<T>(key: string, ttlMs: number): T | null {
+  const cached = readLocalStorageJson<TimedCache<T>>(key);
+  if (!cached || typeof cached !== 'object') return null;
+
+  const updatedAt = cached.updatedAt;
+  if (typeof updatedAt !== 'number' || Date.now() - updatedAt > ttlMs) {
+    return null;
+  }
+
+  return cached.data ?? null;
+}
+
+function writeTimedLocalCache<T>(key: string, data: T) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const payload: TimedCache<T> = {
+      updatedAt: Date.now(),
+      data,
+    };
+    window.localStorage.setItem(key, JSON.stringify(payload));
+  } catch {
+  }
+}
+
+function getStargateTokensCacheKey(chainId: number, chainKey: string) {
+  return `${STARGATE_TOKENS_CACHE_PREFIX}.${chainId}.${chainKey.toLowerCase()}`;
+}
+
+async function fetchBalancesForTokens(params: {
+  chainId: number;
+  rpcUrl: string;
+  walletAddress: `0x${string}`;
+  tokens: UiToken[];
+}) {
+  const client = createChainClient(params.chainId, params.rpcUrl);
+  const next: Record<string, string> = {};
+
+  for (const token of params.tokens) {
+    try {
+      if (token.address === 'native') {
+        const raw = await client.getBalance({
+          address: params.walletAddress,
+        });
+        next[token.address.toLowerCase()] = Number(
+          formatUnits(raw, token.decimals),
+        ).toFixed(4);
+        continue;
+      }
+
+      const raw = await client.readContract({
+        address: token.address,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [params.walletAddress],
+      });
+
+      next[token.address.toLowerCase()] = Number(
+        formatUnits(raw, token.decimals),
+      ).toFixed(4);
+    } catch {
+      next[token.address.toLowerCase()] = '0.0000';
+    }
+  }
+
+  return next;
 }
 
 export function useSwapData({
   chainId,
   staticChains,
   walletAddress,
+  selectedFromToken,
   selectedToToken,
 }: Params) {
-  const [importedByChain, setImportedByChain] = useState<ImportedState>({});
-  const [dynamicTokensByChain, setDynamicTokensByChain] = useState<
-    Record<number, UiToken[]>
-  >({});
-  const [dynamicTokensUpdatedAtByChain, setDynamicTokensUpdatedAtByChain] =
-    useState<Record<number, number>>({});
-  const [runtimeNetworks, setRuntimeNetworks] = useState<RuntimeNetwork[]>(
-    staticChains.map((chain) => ({ chain })),
+  const [importedByChain, setImportedByChain] = useState<ImportedState>(
+    readImportedTokensCache,
   );
-
   const [balances, setBalances] = useState<Record<string, string>>({});
-  const [loadingDynamicTokens, setLoadingDynamicTokens] = useState(false);
-  const [risk, setRisk] = useState<TokenRiskResponse | null>(null);
-  const [riskError, setRiskError] = useState<string | null>(null);
   const [preferredRpcByChain, setPreferredRpcByChain] = useState<
     Record<number, string>
   >({});
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const raw = window.localStorage.getItem(IMPORT_CACHE_KEY);
-    if (!raw) return;
-
-    try {
-      const parsed = JSON.parse(raw) as ImportedState;
-      setImportedByChain(parsed);
-    } catch {
-      setImportedByChain({});
-    }
-  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -103,88 +173,55 @@ export function useSwapData({
     );
   }, [importedByChain]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const raw = window.localStorage.getItem(TOKEN_METADATA_CACHE_KEY);
-    if (!raw) return;
+  const cachedRuntimeNetworks = useMemo(
+    () =>
+      readTimedLocalCache<RuntimeNetwork[]>(
+        STARGATE_NETWORKS_CACHE_KEY,
+        TOKEN_METADATA_CACHE_TTL_MS,
+      ) ?? EMPTY_RUNTIME_NETWORKS,
+    [],
+  );
 
-    try {
-      const parsed = JSON.parse(raw) as TokenMetadataCachePayload;
-      const now = Date.now();
-      const nextTokens: Record<number, UiToken[]> = {};
-      const nextUpdatedAt: Record<number, number> = {};
-
-      for (const [chainKey, tokens] of Object.entries(
-        parsed.tokensByChain ?? {},
-      )) {
-        const chain = Number(chainKey);
-        if (!Number.isFinite(chain) || !Array.isArray(tokens)) continue;
-
-        const updatedAt = parsed.updatedAtByChain?.[chain] ?? 0;
-        if (now - updatedAt > TOKEN_METADATA_CACHE_TTL_MS) continue;
-
-        nextTokens[chain] = tokens;
-        nextUpdatedAt[chain] = updatedAt;
-      }
-
-      setDynamicTokensByChain((prev) => ({ ...prev, ...nextTokens }));
-      setDynamicTokensUpdatedAtByChain((prev) => ({
-        ...prev,
-        ...nextUpdatedAt,
-      }));
-    } catch {
-      // ignore invalid cache payload
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const payload: TokenMetadataCachePayload = {
-      tokensByChain: dynamicTokensByChain,
-      updatedAtByChain: dynamicTokensUpdatedAtByChain,
-    };
-
-    window.localStorage.setItem(
-      TOKEN_METADATA_CACHE_KEY,
-      JSON.stringify(payload),
-    );
-  }, [dynamicTokensByChain, dynamicTokensUpdatedAtByChain]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void fetchStargateNetworks()
-      .then((networks) => {
-        if (cancelled || networks.length === 0) return;
-        setRuntimeNetworks((prev) => [...prev, ...networks]);
-      })
-      .catch(() => {
-        // keep static fallback
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: dynamicRuntimeNetworks = cachedRuntimeNetworks } = useQuery({
+    queryKey: ['stargate', 'networks'],
+    queryFn: async () => {
+      const networks = await fetchStargateNetworks();
+      writeTimedLocalCache(STARGATE_NETWORKS_CACHE_KEY, networks);
+      return networks;
+    },
+    initialData:
+      cachedRuntimeNetworks.length > 0 ? cachedRuntimeNetworks : undefined,
+    staleTime: TOKEN_METADATA_CACHE_TTL_MS,
+    gcTime: TOKEN_METADATA_CACHE_TTL_MS * 2,
+    retry: 1,
+  });
 
   const uniqueRuntimeNetworks = useMemo(() => {
     const allowedChainIds = new Set(staticChains.map((chain) => chain.id));
     const map = new Map<number, RuntimeNetwork>();
-    for (const network of runtimeNetworks) {
+
+    for (const chain of staticChains) {
+      map.set(chain.id, { chain });
+    }
+
+    for (const network of dynamicRuntimeNetworks) {
       if (!allowedChainIds.has(network.chain.id)) continue;
       const existing = map.get(network.chain.id);
       if (!existing || (!existing.chainKey && network.chainKey)) {
         map.set(network.chain.id, network);
       }
     }
-    return Array.from(map.values());
-  }, [runtimeNetworks, staticChains]);
 
-  const selectedNetwork = useMemo(() => {
-    return uniqueRuntimeNetworks.find((network) => network.chain.id === chainId)
-      ?.chain;
+    return Array.from(map.values());
+  }, [staticChains, dynamicRuntimeNetworks]);
+
+  const selectedRuntimeNetwork = useMemo(() => {
+    return uniqueRuntimeNetworks.find(
+      (network) => network.chain.id === chainId,
+    );
   }, [uniqueRuntimeNetworks, chainId]);
+
+  const selectedNetwork = selectedRuntimeNetwork?.chain;
 
   const selectedRpcUrls = useMemo(() => {
     const dynamicUrls = selectedNetwork?.rpcUrls ?? [];
@@ -200,64 +237,61 @@ export function useSwapData({
   }, [chainId, preferredRpcByChain, selectedRpcUrls]);
 
   const selectedChainKey = useMemo(() => {
-    return resolveChainKey(
-      chainId,
-      uniqueRuntimeNetworks.find((network) => network.chain.id === chainId)
-        ?.chainKey,
-    );
-  }, [uniqueRuntimeNetworks, chainId]);
+    return selectedRuntimeNetwork?.chainKey ?? getChainKey(chainId);
+  }, [chainId, selectedRuntimeNetwork]);
 
   const selectedChainIcon = useMemo(() => {
     if (!selectedChainKey) return null;
     return getChainIconUrl(selectedChainKey);
   }, [selectedChainKey]);
 
-  useEffect(() => {
-    if (!selectedChainKey) return;
+  const stargateTokensCacheKey = useMemo(() => {
+    if (!selectedChainKey) return null;
+    return getStargateTokensCacheKey(chainId, selectedChainKey);
+  }, [chainId, selectedChainKey]);
 
-    const hasTokens = Boolean(dynamicTokensByChain[chainId]?.length);
-    const cachedAt = dynamicTokensUpdatedAtByChain[chainId] ?? 0;
-    const hasFreshCache =
-      hasTokens && Date.now() - cachedAt < TOKEN_METADATA_CACHE_TTL_MS;
-    if (hasFreshCache) return;
+  const cachedDynamicTokensForChain = useMemo(() => {
+    if (!stargateTokensCacheKey) return EMPTY_TOKENS;
+    return (
+      readTimedLocalCache<UiToken[]>(
+        stargateTokensCacheKey,
+        TOKEN_METADATA_CACHE_TTL_MS,
+      ) ?? EMPTY_TOKENS
+    );
+  }, [stargateTokensCacheKey]);
 
-    let cancelled = false;
-    setLoadingDynamicTokens(true);
-
-    void fetchStargateTokens({ chainId, chainKey: selectedChainKey })
-      .then((tokens) => {
-        if (cancelled || tokens.length === 0) return;
-        setDynamicTokensByChain((prev) => ({
-          ...prev,
-          [chainId]: dedupeTokens(tokens),
-        }));
-        setDynamicTokensUpdatedAtByChain((prev) => ({
-          ...prev,
-          [chainId]: Date.now(),
-        }));
-      })
-      .catch(() => {
-        // keep curated fallback
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingDynamicTokens(false);
+  const {
+    data: dynamicTokensForChain = cachedDynamicTokensForChain,
+    isLoading: loadingDynamicTokens,
+  } = useQuery({
+    queryKey: ['stargate', 'tokens', chainId, selectedChainKey],
+    queryFn: async () => {
+      if (!selectedChainKey) return EMPTY_TOKENS;
+      const tokens = await fetchStargateTokens({
+        chainId,
+        chainKey: selectedChainKey,
       });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    selectedChainKey,
-    chainId,
-    dynamicTokensByChain,
-    dynamicTokensUpdatedAtByChain,
-  ]);
+      const dedupedTokens = dedupeTokens(tokens);
+      if (stargateTokensCacheKey) {
+        writeTimedLocalCache(stargateTokensCacheKey, dedupedTokens);
+      }
+      return dedupedTokens;
+    },
+    enabled: Boolean(selectedChainKey),
+    initialData:
+      cachedDynamicTokensForChain.length > 0
+        ? cachedDynamicTokensForChain
+        : undefined,
+    staleTime: TOKEN_METADATA_CACHE_TTL_MS,
+    gcTime: TOKEN_METADATA_CACHE_TTL_MS * 2,
+    retry: 1,
+  });
+  const dynamicTokensCount = dynamicTokensForChain.length;
 
   const curatedTokens = useMemo(() => {
-    const dynamic = dynamicTokensByChain[chainId];
-    if (dynamic && dynamic.length > 0) return dynamic;
+    if (dynamicTokensCount > 0) return dynamicTokensForChain;
     return listTokensForChain(chainId);
-  }, [chainId, dynamicTokensByChain]);
+  }, [chainId, dynamicTokensCount, dynamicTokensForChain]);
 
   const importedTokens = useMemo(
     () => importedByChain[chainId] ?? EMPTY_TOKENS,
@@ -269,33 +303,42 @@ export function useSwapData({
     [curatedTokens, importedTokens],
   );
 
-  const tokenKeys = useMemo(
-    () => chainTokens.map((token) => token.address.toLowerCase()).join(','),
-    [chainTokens],
-  );
+  const selectedBalanceTokens = useMemo(() => {
+    const byAddress = new Map(
+      chainTokens.map((token) => [token.address.toLowerCase(), token] as const),
+    );
+    const trackedAddresses = Array.from(
+      new Set(
+        [selectedFromToken, selectedToToken]
+          .filter((value): value is string => Boolean(value))
+          .map((value) => value.toLowerCase()),
+      ),
+    );
+
+    return trackedAddresses
+      .map((address) => byAddress.get(address))
+      .filter((token): token is UiToken => Boolean(token));
+  }, [chainTokens, selectedFromToken, selectedToToken]);
 
   useEffect(() => {
-    if (!walletAddress || !isAddress(walletAddress)) {
-      setBalances({});
-      return;
-    }
-
-    if (orderedRpcUrls.length === 0) return;
-    const activeWalletAddress = walletAddress;
-
     let cancelled = false;
 
     async function loadBalances() {
-      const next: Record<string, string> = {};
-      const balanceTokens = chainTokens.slice(0, MAX_BALANCE_TOKENS);
+      if (!walletAddress || !isAddress(walletAddress)) {
+        if (!cancelled) setBalances({});
+        return;
+      }
+
+      if (selectedBalanceTokens.length === 0) {
+        if (!cancelled) setBalances({});
+        return;
+      }
+
+      if (orderedRpcUrls.length === 0) return;
+
       let activeRpcUrl: string | null = null;
-
       for (const rpcUrl of orderedRpcUrls) {
-        const probeClient = createPublicClient({
-          chain: getViemChain(chainId),
-          transport: http(rpcUrl),
-        });
-
+        const probeClient = createChainClient(chainId, rpcUrl);
         try {
           await probeClient.getBlockNumber();
           activeRpcUrl = rpcUrl;
@@ -303,50 +346,29 @@ export function useSwapData({
             prev[chainId] === rpcUrl ? prev : { ...prev, [chainId]: rpcUrl },
           );
           break;
-        } catch {
-          // try next RPC URL
-        }
+        } catch {}
       }
 
       if (!activeRpcUrl) {
-        for (const token of balanceTokens) {
-          next[token.address.toLowerCase()] = '0.0000';
+        if (!cancelled) {
+          const zeroBalances = selectedBalanceTokens.reduce<Record<string, string>>(
+            (acc, token) => {
+              acc[token.address.toLowerCase()] = '0.0000';
+              return acc;
+            },
+            {},
+          );
+          setBalances(zeroBalances);
         }
-        if (!cancelled) setBalances(next);
         return;
       }
 
-      const client = createPublicClient({
-        chain: getViemChain(chainId),
-        transport: http(activeRpcUrl),
+      const next = await fetchBalancesForTokens({
+        chainId,
+        rpcUrl: activeRpcUrl,
+        walletAddress: walletAddress as `0x${string}`,
+        tokens: selectedBalanceTokens,
       });
-
-      for (const token of balanceTokens) {
-        try {
-          if (token.address === 'native') {
-            const raw = await client.getBalance({
-              address: activeWalletAddress,
-            });
-            next[token.address.toLowerCase()] = Number(
-              formatUnits(raw, token.decimals),
-            ).toFixed(4);
-            continue;
-          }
-
-          const raw = await client.readContract({
-            address: token.address,
-            abi: erc20Abi,
-            functionName: 'balanceOf',
-            args: [activeWalletAddress],
-          });
-
-          next[token.address.toLowerCase()] = Number(
-            formatUnits(raw, token.decimals),
-          ).toFixed(4);
-        } catch {
-          next[token.address.toLowerCase()] = '0.0000';
-        }
-      }
 
       if (!cancelled) {
         setBalances(next);
@@ -354,48 +376,34 @@ export function useSwapData({
     }
 
     void loadBalances();
-    const interval = setInterval(() => {
+
+    if (
+      !walletAddress ||
+      !isAddress(walletAddress) ||
+      selectedBalanceTokens.length === 0 ||
+      orderedRpcUrls.length === 0
+    ) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const intervalId = window.setInterval(() => {
       void loadBalances();
     }, BALANCE_REFRESH_MS);
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      window.clearInterval(intervalId);
     };
-  }, [walletAddress, chainId, tokenKeys, chainTokens, orderedRpcUrls]);
-
-  useEffect(() => {
-    if (!selectedToToken || selectedToToken === 'native') {
-      setRisk(null);
-      setRiskError(null);
-      return;
-    }
-
-    let mounted = true;
-    void fetchTokenRisk(chainId, selectedToToken)
-      .then((response) => {
-        if (!mounted) return;
-        setRisk(response);
-        setRiskError(null);
-      })
-      .catch((error: unknown) => {
-        if (!mounted) return;
-        setRisk(null);
-        setRiskError(
-          error instanceof Error ? error.message : 'Risk lookup failed',
-        );
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [chainId, selectedToToken]);
+  }, [walletAddress, chainId, orderedRpcUrls, selectedBalanceTokens]);
 
   const importTokenByAddress = useCallback(
     async (address: `0x${string}`) => {
       if (orderedRpcUrls.length === 0) {
         throw new Error('No RPC network configured');
       }
+
       let symbol: string | undefined;
       let name: string | undefined;
       let decimals: number | undefined;
@@ -403,14 +411,18 @@ export function useSwapData({
 
       for (const rpcUrl of orderedRpcUrls) {
         try {
-          const client = createPublicClient({
-            chain: getViemChain(chainId),
-            transport: http(rpcUrl),
-          });
-
+          const client = createChainClient(chainId, rpcUrl);
           const [nextSymbol, nextName, nextDecimals] = await Promise.all([
-            client.readContract({ address, abi: erc20Abi, functionName: 'symbol' }),
-            client.readContract({ address, abi: erc20Abi, functionName: 'name' }),
+            client.readContract({
+              address,
+              abi: erc20Abi,
+              functionName: 'symbol',
+            }),
+            client.readContract({
+              address,
+              abi: erc20Abi,
+              functionName: 'name',
+            }),
             client.readContract({
               address,
               abi: erc20Abi,
@@ -461,8 +473,6 @@ export function useSwapData({
     uniqueRuntimeNetworks,
     loadingDynamicTokens,
     balances,
-    risk,
-    riskError,
     importTokenByAddress,
   };
 }
