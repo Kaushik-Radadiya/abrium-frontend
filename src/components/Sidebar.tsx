@@ -21,7 +21,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen min-w-[302px] flex-col justify-between border-r border-(--border) p-4 text-(--text) font-sans bg-(--panel)">
+    <aside className='flex h-screen min-w-[302px] flex-col justify-between border-r border-(--border) p-4 text-(--text) bg-(--panel)'>
       <div>
         <div className="mb-4">
           <div className="flex items-center gap-3">
@@ -39,11 +39,10 @@ export function Sidebar() {
                 <li key={label}>
                   <Link
                     href={href}
-                    className={`flex items-center gap-3 rounded-xl p-3 text-[16px] font-medium transition-colors border ${
-                      isActive
-                        ? 'bg-(--swap-panel-bg) border-(--border) text-(--text)'
-                        : 'border-transparent text-(--muted) hover:bg-(--token-row-hover-bg) hover:text-(--text)'
-                    }`}
+                    className={`flex items-center gap-3 rounded-xl p-3 text-base leading-[16px] font-normal transition-colors border ${isActive
+                      ? 'bg-(--neutral-background) border-(--neutral-border) text-(--text)'
+                      : 'border-transparent text-(--neutral-text-textWeak) hover:bg-(--neutral-background-hover) hover:text-(--text)'
+                      }`}
                   >
                     <Icon size={16} />
                     {label}
