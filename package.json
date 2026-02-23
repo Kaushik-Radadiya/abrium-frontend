@@ -2,6 +2,7 @@
   "name": "abrium-frontend",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "yarn@4.10.2",
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:webpack": "next dev --webpack",
