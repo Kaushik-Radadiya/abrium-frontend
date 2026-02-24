@@ -35,6 +35,7 @@ type Params = {
   walletAddress?: string;
   selectedFromToken?: string;
   selectedToToken?: string;
+  loadAllTokenBalances?: boolean;
 };
 
 const IMPORT_CACHE_KEY = 'abrium.imported.tokens.v1';
@@ -42,8 +43,31 @@ const STARGATE_NETWORKS_CACHE_KEY = 'abrium.stargate.networks.v1';
 const STARGATE_TOKENS_CACHE_PREFIX = 'abrium.stargate.tokens.v1';
 const TOKEN_METADATA_CACHE_TTL_MS = 30 * 60 * 1000;
 const BALANCE_REFRESH_MS = 30_000;
+const MULTICALL_CHUNK_SIZE = 100;
+const TOKEN_NOT_FOUND_IMPORT_ERROR = 'Token not found or invalid token address.';
+const TOKEN_LOOKUP_UNAVAILABLE_ERROR = 'Token lookup is temporarily unavailable.';
 const EMPTY_TOKENS: UiToken[] = [];
 const EMPTY_RUNTIME_NETWORKS: RuntimeNetwork[] = [];
+const IMPORT_LOOKUP_UNAVAILABLE_PRIORITY_FRAGMENTS = [
+  'no rpc network configured',
+] as const;
+const IMPORT_TOKEN_NOT_FOUND_FRAGMENTS = [
+  'returned no data',
+  'address is not a contract',
+  'invalid address',
+  'execution reverted',
+  'does not have the function',
+  'decimals',
+  'symbol',
+  'name',
+] as const;
+const IMPORT_LOOKUP_UNAVAILABLE_FRAGMENTS = [
+  'timeout',
+  'network',
+  'fetch',
+  '429',
+  'rate limit',
+] as const;
 
 type TimedCache<T> = {
   updatedAt: number;
@@ -111,6 +135,37 @@ function getStargateTokensCacheKey(chainId: number, chainKey: string) {
   return `${STARGATE_TOKENS_CACHE_PREFIX}.${chainId}.${chainKey.toLowerCase()}`;
 }
 
+function includesAnyFragment(
+  value: string,
+  fragments: readonly string[],
+) {
+  return fragments.some((fragment) => value.includes(fragment));
+}
+
+function normalizeImportTokenError(rawMessage?: string) {
+  const message = rawMessage?.trim().toLowerCase();
+  if (!message) return TOKEN_NOT_FOUND_IMPORT_ERROR;
+
+  if (
+    includesAnyFragment(
+      message,
+      IMPORT_LOOKUP_UNAVAILABLE_PRIORITY_FRAGMENTS,
+    )
+  ) {
+    return TOKEN_LOOKUP_UNAVAILABLE_ERROR;
+  }
+
+  if (includesAnyFragment(message, IMPORT_TOKEN_NOT_FOUND_FRAGMENTS)) {
+    return TOKEN_NOT_FOUND_IMPORT_ERROR;
+  }
+
+  if (includesAnyFragment(message, IMPORT_LOOKUP_UNAVAILABLE_FRAGMENTS)) {
+    return TOKEN_LOOKUP_UNAVAILABLE_ERROR;
+  }
+
+  return TOKEN_NOT_FOUND_IMPORT_ERROR;
+}
+
 async function fetchBalancesForTokens(params: {
   chainId: number;
   rpcUrl: string;
@@ -118,33 +173,54 @@ async function fetchBalancesForTokens(params: {
   tokens: UiToken[];
 }) {
   const client = createChainClient(params.chainId, params.rpcUrl);
-  const next: Record<string, string> = {};
+  const next: Record<string, string> = Object.fromEntries(
+    params.tokens.map((token) => [token.address.toLowerCase(), '0.0000']),
+  );
+  const nativeTokens = params.tokens.filter((token) => token.address === 'native');
+  const erc20Tokens = params.tokens.filter(
+    (token): token is UiToken & { address: `0x${string}` } =>
+      token.address !== 'native',
+  );
 
-  for (const token of params.tokens) {
+  if (nativeTokens.length > 0) {
     try {
-      if (token.address === 'native') {
-        const raw = await client.getBalance({
-          address: params.walletAddress,
-        });
+      const rawNativeBalance = await client.getBalance({
+        address: params.walletAddress,
+      });
+      for (const token of nativeTokens) {
         next[token.address.toLowerCase()] = Number(
-          formatUnits(raw, token.decimals),
+          formatUnits(rawNativeBalance, token.decimals),
         ).toFixed(4);
-        continue;
       }
+    } catch {}
+  }
 
-      const raw = await client.readContract({
-        address: token.address,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [params.walletAddress],
+  for (let offset = 0; offset < erc20Tokens.length; offset += MULTICALL_CHUNK_SIZE) {
+    const chunk = erc20Tokens.slice(offset, offset + MULTICALL_CHUNK_SIZE);
+
+    try {
+      const chunkBalances = await client.multicall({
+        allowFailure: true,
+        contracts: chunk.map((token) => ({
+          address: token.address,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [params.walletAddress],
+        })),
       });
 
-      next[token.address.toLowerCase()] = Number(
-        formatUnits(raw, token.decimals),
-      ).toFixed(4);
-    } catch {
-      next[token.address.toLowerCase()] = '0.0000';
-    }
+      chunkBalances.forEach((result, index) => {
+        if (result.status !== 'success') return;
+        const token = chunk[index];
+        const rawBalance =
+          typeof result.result === 'bigint'
+            ? result.result
+            : BigInt(result.result);
+        next[token.address.toLowerCase()] = Number(
+          formatUnits(rawBalance, token.decimals),
+        ).toFixed(4);
+      });
+    } catch {}
   }
 
   return next;
@@ -156,6 +232,7 @@ export function useSwapData({
   walletAddress,
   selectedFromToken,
   selectedToToken,
+  loadAllTokenBalances = false,
 }: Params) {
   const [importedByChain, setImportedByChain] = useState<ImportedState>(
     readImportedTokensCache,
@@ -303,7 +380,9 @@ export function useSwapData({
     [curatedTokens, importedTokens],
   );
 
-  const selectedBalanceTokens = useMemo(() => {
+  const trackedBalanceTokens = useMemo(() => {
+    if (loadAllTokenBalances) return chainTokens;
+
     const byAddress = new Map(
       chainTokens.map((token) => [token.address.toLowerCase(), token] as const),
     );
@@ -318,7 +397,7 @@ export function useSwapData({
     return trackedAddresses
       .map((address) => byAddress.get(address))
       .filter((token): token is UiToken => Boolean(token));
-  }, [chainTokens, selectedFromToken, selectedToToken]);
+  }, [chainTokens, loadAllTokenBalances, selectedFromToken, selectedToToken]);
 
   useEffect(() => {
     let cancelled = false;
@@ -329,7 +408,7 @@ export function useSwapData({
         return;
       }
 
-      if (selectedBalanceTokens.length === 0) {
+      if (trackedBalanceTokens.length === 0) {
         if (!cancelled) setBalances({});
         return;
       }
@@ -351,7 +430,7 @@ export function useSwapData({
 
       if (!activeRpcUrl) {
         if (!cancelled) {
-          const zeroBalances = selectedBalanceTokens.reduce<Record<string, string>>(
+          const zeroBalances = trackedBalanceTokens.reduce<Record<string, string>>(
             (acc, token) => {
               acc[token.address.toLowerCase()] = '0.0000';
               return acc;
@@ -367,7 +446,7 @@ export function useSwapData({
         chainId,
         rpcUrl: activeRpcUrl,
         walletAddress: walletAddress as `0x${string}`,
-        tokens: selectedBalanceTokens,
+        tokens: trackedBalanceTokens,
       });
 
       if (!cancelled) {
@@ -380,9 +459,15 @@ export function useSwapData({
     if (
       !walletAddress ||
       !isAddress(walletAddress) ||
-      selectedBalanceTokens.length === 0 ||
+      trackedBalanceTokens.length === 0 ||
       orderedRpcUrls.length === 0
     ) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (loadAllTokenBalances) {
       return () => {
         cancelled = true;
       };
@@ -396,18 +481,24 @@ export function useSwapData({
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [walletAddress, chainId, orderedRpcUrls, selectedBalanceTokens]);
+  }, [
+    walletAddress,
+    chainId,
+    orderedRpcUrls,
+    trackedBalanceTokens,
+    loadAllTokenBalances,
+  ]);
 
   const importTokenByAddress = useCallback(
     async (address: `0x${string}`) => {
       if (orderedRpcUrls.length === 0) {
-        throw new Error('No RPC network configured');
+        throw new Error(TOKEN_LOOKUP_UNAVAILABLE_ERROR);
       }
 
       let symbol: string | undefined;
       let name: string | undefined;
       let decimals: number | undefined;
-      let lastError = 'RPC request failed';
+      let lastError: unknown;
 
       for (const rpcUrl of orderedRpcUrls) {
         try {
@@ -435,13 +526,16 @@ export function useSwapData({
           decimals = nextDecimals;
           break;
         } catch (error) {
-          lastError =
-            error instanceof Error ? error.message : 'RPC request failed';
+          lastError = error;
         }
       }
 
       if (!symbol || !name || decimals === undefined) {
-        throw new Error(lastError);
+        throw new Error(
+          normalizeImportTokenError(
+            lastError instanceof Error ? lastError.message : undefined,
+          ),
+        );
       }
 
       const importedToken: UiToken = {

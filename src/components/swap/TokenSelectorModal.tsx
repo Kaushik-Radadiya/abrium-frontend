@@ -31,6 +31,7 @@ type Props = {
   balances: Record<string, string>
   onSelectToken: (address: string) => void
   loadingDynamicTokens: boolean
+  showImportOption: boolean
   canImport: boolean
   importing: boolean
   importAddress: string
@@ -69,6 +70,7 @@ export function TokenSelectorModal({
   balances,
   onSelectToken,
   loadingDynamicTokens,
+  showImportOption,
   canImport,
   importing,
   importAddress,
@@ -317,23 +319,41 @@ export function TokenSelectorModal({
                 </Button>
               ) : null}
 
-              {canImport ? (
+              {showImportOption ? (
                 <Button
                   variant="ghost"
                   size="none"
                   type='button'
-                  className='flex min-h-14 w-full items-center justify-between rounded-xl border border-[var(--token-row-import-border)] bg-[var(--token-row-import-bg)] px-2 py-1.5 text-left text-[var(--token-row-text)]'
-                  disabled={importing}
+                  className={`flex min-h-14 w-full items-center justify-between rounded-xl border-2 px-2 py-1.5 text-left text-[var(--token-row-text)] ${
+                    importError
+                      ? 'border-[var(--alert-error-border)] bg-[var(--alert-error-bg)]'
+                      : 'border-[var(--token-row-import-border)] bg-[var(--token-row-import-bg)]'
+                  }`}
+                  disabled={importing || !canImport}
                   onClick={onImportToken}
                 >
                   <div>
-                    <div>{importing ? 'Importing...' : 'Import token by address'}</div>
-                    <div className={MUTED_CLASS}>{shortAddress(importAddress)}</div>
+                    <div>
+                      {importing
+                        ? 'Importing...'
+                        : canImport
+                          ? 'Import token by address'
+                          : 'Paste a valid 0x token address'}
+                    </div>
+                    <div className={MUTED_CLASS}>
+                      {canImport
+                        ? shortAddress(importAddress)
+                        : 'Only EVM token addresses are supported'}
+                    </div>
                   </div>
                 </Button>
               ) : null}
 
-              {importError ? <p className={MUTED_CLASS}>{importError}</p> : null}
+              {importError ? (
+                <p className='px-1 pt-1 text-xs font-medium uppercase tracking-[0.02em] text-[var(--alert-error-text)]'>
+                  {importError}
+                </p>
+              ) : null}
             </div>
           </motion.div>
         </motion.div>
