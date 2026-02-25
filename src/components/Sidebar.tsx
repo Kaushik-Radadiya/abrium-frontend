@@ -1,24 +1,11 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  ArrowLeftRight,
-  Wallet,
-  History,
-  ChartPie,
-  FileText,
-} from 'lucide-react';
+import { NAV_ITEMS } from '@/lib/constant/sidebar-menu';
+import { FileText } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { label: 'Swap', href: '/', icon: ArrowLeftRight },
-  { label: 'Portfolio', href: '/', icon: Wallet },
-  { label: 'History', href: '/', icon: History },
-  { label: 'Analytics', href: '/', icon: ChartPie },
-];
 
 export function Sidebar() {
-  const pathname = usePathname();
 
   return (
     <aside className='flex h-screen min-w-[302px] flex-col justify-between border-r border-(--border) p-4 text-(--text) bg-(--panel)'>

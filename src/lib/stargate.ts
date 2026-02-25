@@ -8,7 +8,7 @@ type StargateNetwork = {
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_STARGATE_BASE_URL ??
-  'https://stargate.finance/api/v1';
+  'https://stargate.finance/api/v2';
 
 function asArray(value: unknown) {
   if (Array.isArray(value)) return value;

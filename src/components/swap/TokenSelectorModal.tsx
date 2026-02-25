@@ -1,7 +1,8 @@
 'use client'
 
-import { type UIEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { type UIEvent, useCallback,  useMemo, useState } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 import { SupportedChain } from '@/lib/chains'
 import { UiToken } from '@/lib/tokens'
@@ -88,91 +89,60 @@ export function TokenSelectorModal({
   }, [hasSearchQuery, tokens, visibleCount])
   const canLoadMoreTokens = !hasSearchQuery && visibleTokens.length < tokens.length
 
-  const networkMenuRef = useRef<HTMLDivElement>(null)
-  const networkButtonRef = useRef<HTMLButtonElement>(null)
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        networkMenuOpen &&
-        networkMenuRef.current &&
-        !networkMenuRef.current.contains(event.target as Node) &&
-        networkButtonRef.current &&
-        !networkButtonRef.current.contains(event.target as Node)
-      ) {
-        setNetworkMenuOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [networkMenuOpen, setNetworkMenuOpen])
 
   const onTokenListScroll = useCallback(
     (event: UIEvent<HTMLDivElement>) => {
-      if (!canLoadMoreTokens) return
+      if (!canLoadMoreTokens) return;
 
-      const element = event.currentTarget
-      const remaining = element.scrollHeight - (element.scrollTop + element.clientHeight)
-      if (remaining > 120) return
+      const element = event.currentTarget;
+      const remaining =
+        element.scrollHeight - (element.scrollTop + element.clientHeight);
+      if (remaining > 120) return;
 
-      setVisibleCount((current) => Math.min(current + TOKENS_PAGE_SIZE, tokens.length))
+      setVisibleCount((current) =>
+        Math.min(current + TOKENS_PAGE_SIZE, tokens.length),
+      );
     },
-    [canLoadMoreTokens, tokens.length],
-  )
+    [canLoadMoreTokens, tokens.length, setVisibleCount],
+  );
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className='fixed inset-0 z-[110] grid place-items-center bg-[var(--modal-backdrop)] p-4'
-          onClick={onClose}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.1 }}
-        >
-          <motion.div
-            className='flex flex-col h-[min(700px,85vh)] w-full gap-2 max-w-[430px] overflow-hidden rounded-[18px] border border-[var(--swap-token-border)] bg-[var(--neutral-background-raised)] text-[var(--modal-text)]'
-            onClick={(event) => event.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ duration: 0.1 }}
-          >
-            <div className='flex items-center justify-between px-4 pt-4'>
-              <div className='text-lg font-normal'>Select a token</div>
-              <Button
-                variant="ghost"
-                size="none"
-                type='button'
-                className='min-h-0 border-0 bg-transparent p-0 text-[22px] text-[var(--ghost-text)]'
-                onClick={onClose}
-              >
-                <X className='text-[var(--arrow-icon-btn)]' />
-              </Button>
-            </div>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onClose();
+      }}
+    >
+      <DialogContent
+        showCloseButton={true}
+        className="flex flex-col h-[min(700px,85vh)] w-full gap-2 max-w-[430px] overflow-hidden rounded-[18px] border border-[var(--swap-token-border)] bg-[var(--neutral-background-raised)] text-[var(--modal-text)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <DialogHeader>
+          <DialogTitle className="text-base font-normal">
+            Select a token
+          </DialogTitle>
+        </DialogHeader>
 
-            <div className='mx-[14px] flex py-1 px-3 items-center gap-2.5 rounded-full border border-[var(--search-row-border)] bg-[var(--search-row-bg)]'>
-              <span className='text-lg leading-none opacity-70' aria-hidden='true'>
-                <SearchIcon className='text-[var(--arrow-icon-btn)] size-5' />
-              </span>
-              <input
-                className='min-h-0 flex-1 border-0 bg-transparent p-0 text-base text-[var(--neutral-text-textWeek)] outline-none placeholder:text-[var(--neutral-text-placeholder)]'
-                value={query}
-                onChange={(event) => onQueryChange(event.target.value)}
-                placeholder='Search tokens or paste address'
-              />
-              <div className='relative ml-auto flex justify-center'>
+        <div className="mx-[14px] flex py-1 px-3 items-center gap-2.5 rounded-full border border-[var(--search-row-border)] bg-[var(--search-row-bg)]">
+          <span className="text-lg leading-none opacity-70" aria-hidden="true">
+            <SearchIcon className="text-[var(--arrow-icon-btn)] size-5" />
+          </span>
+          <input
+            className="min-h-0 flex-1 border-0 bg-transparent p-0 text-base text-[var(--neutral-text-textWeek)] outline-none placeholder:text-[var(--neutral-text-placeholder)]"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Search tokens or paste address"
+          />
+          <div className="relative ml-auto flex justify-center">
+            <DropdownMenu open={networkMenuOpen} onOpenChange={setNetworkMenuOpen}>
+              <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="none"
-                  ref={networkButtonRef}
-                  type='button'
-                  className='inline-flex min-h-[34px] min-w-[54px] items-center justify-end gap-2 rounded-[10px] border-0 bg-transparent p-0 text-[var(--search-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--network-item-active-border)]'
-                  onClick={() => setNetworkMenuOpen(!networkMenuOpen)}
+                  type="button"
+                  className="inline-flex min-h-[34px] min-w-[54px] items-center justify-end gap-2 rounded-[10px] border-0 bg-transparent p-0 text-[var(--search-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--network-item-active-border)]"
                 >
                   <span className='inline-flex items-center'>
                     {currentChainIcon ? (
@@ -190,174 +160,165 @@ export function TokenSelectorModal({
                     {networkMenuOpen ? <ChevronUpIcon className='text-[var(--arrow-icon-btn)] size-4' /> : <ChevronDownIcon className='text-[var(--arrow-icon-btn)] size-4' />}
                   </span>
                 </Button>
-                {networkMenuOpen ? (
-                  <motion.div
-                    ref={networkMenuRef}
-                    className='thin-scrollbar absolute -right-2 top-10 z-40 grid max-h-[min(62vh,420px)] w-[220px] gap-0.5 overflow-y-auto rounded-xl border border-[var(--neutral-border)] bg-[var(--neutral-background)] p-1.5'
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.15 }}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="thin-scrollbar z-[60] grid max-h-[min(62vh,420px)] w-[220px] gap-0.5 overflow-y-auto rounded-xl border border-[var(--neutral-border)] bg-[var(--neutral-background)] p-1.5"
+              >
+                {networks.map((network) => (
+                  <DropdownMenuItem
+                    key={`network-${network.chain.id}`}
+                    className={`rounded-lg flex py-1 px-2.5 text-left cursor-pointer ${network.chain.id === chainId
+                      ? 'border-none bg-[var(--neutral-background-raised-hover)] text-[var(--network-item-active-text)] focus:bg-[var(--neutral-background-raised-hover)] focus:text-[var(--network-item-active-text)]'
+                      : 'border border-transparent bg-transparent text-[var(--network-item-text)] hover:bg-[var(--neutral-background-raised-hover)] focus:bg-[var(--neutral-background-raised-hover)]'
+                      }`}
+                    onSelect={() => {
+                      onChainSelect(network.chain.id);
+                      setNetworkMenuOpen(false);
+                    }}
                   >
-                    {networks.map((network) => (
-                      <Button
-                        variant="ghost"
-                        size="none"
-                        key={`network-${network.chain.id}`}
-                        type='button'
-                        className={`rounded-lg border flex py-1 px-2.5 text-left ${network.chain.id === chainId
-                          ? 'border-none bg-[var(--neutral-background-raised-hover)] text-[var(--network-item-active-text)]'
-                          : 'border-transparent bg-transparent text-[var(--network-item-text)] hover:bg-[var(--neutral-background-raised-hover)]'
-                          }`}
-                        onClick={() => {
-                          onChainSelect(network.chain.id)
-                          setNetworkMenuOpen(false)
-                        }}
-                      >
-                        <span className='inline-flex items-center gap-2'>
-                          <span className='relative size-5 overflow-hidden rounded-full border-0'>
-                            <IconWithFallback
-                              src={getChainIconUrl(
-                                resolveChainKey(network.chain.id, network.chainKey),
-                              )}
-                              alt={network.chain.name}
-                              fallback={network.chain.name[0] ?? 'N'}
-                              sizes='30px'
-                            />
-                          </span>
-                          {network.chain.name}
-                        </span>
-                      </Button>
-                    ))}
-                  </motion.div>
-                ) : null}
-              </div>
-            </div>
-
-            <div
-              className='thin-scrollbar min-h-0 gap-1 overflow-auto px-2 pb-2.5 pt-1 me-1'
-              onScroll={onTokenListScroll}
-            >
-              {loadingDynamicTokens && tokens.length === 0 ? (
-                <>
-                  {Array.from({ length: 6 }).map((_, index) => (
-                    <div
-                      key={`skeleton-${index}`}
-                      className='pointer-events-none flex min-h-14 items-center justify-between rounded-xl border border-transparent bg-transparent px-2 py-1.5'
-                    >
-                      <div className='flex items-center gap-2.5'>
-                        <span className='h-8 w-8 rounded-full border border-[var(--skeleton-border)] bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
-                        <div className='grid gap-1.5'>
-                          <span className='inline-block h-2.5 w-[170px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
-                          <span className='inline-block h-2.5 w-[110px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
-                        </div>
-                      </div>
-                      <span className='inline-block h-2.5 w-[42px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
-                    </div>
-                  ))}
-                </>
-              ) : null}
-
-              {visibleTokens.map((token) => (
-                <Button
-                  size="none"
-                  variant='ghost'
-                  key={`list-${token.address}`}
-                  className='flex min-h-14 w-full items-center justify-between rounded-xl border px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]'
-                  onClick={() => onSelectToken(token.address)}
-                >
-                  <div className='flex min-w-0 flex-1 items-center gap-2.5'>
-                    <span className={TOKEN_ICON_CLASS}>
-                      <IconWithFallback
-                        src={token.logoURI ?? getTokenIconUrl(token.symbol)}
-                        alt={token.symbol}
-                        fallback={token.symbol[0]}
-                      />
-                      {selectedChainIcon ? (
-                        <span className='absolute bottom-0 right-0 grid h-4 w-4 place-items-center overflow-hidden rounded-full border-2 border-[var(--chain-badge-border)] bg-[var(--chain-badge-bg)]'>
-                          <IconWithFallback
-                            src={selectedChainIcon}
-                            alt={selectedChainKey}
-                            fallback=''
-                            showFallback={false}
-                            sizes='16px'
-                          />
-                        </span>
-                      ) : null}
+                    <span className="inline-flex items-center gap-2">
+                      <span className="relative size-5 overflow-hidden rounded-full border-0">
+                        <IconWithFallback
+                          src={getChainIconUrl(
+                            resolveChainKey(network.chain.id, network.chainKey),
+                          )}
+                          alt={network.chain.name}
+                          fallback={network.chain.name[0] ?? 'N'}
+                          sizes="30px"
+                        />
+                      </span>
+                      {network.chain.name}
                     </span>
-                    <div className='min-w-0 flex flex-col gap-1'>
-                      <div className='truncate text-base font-medium text-[var(--neutral-text)]'>
-                        {token.symbol}
-                      </div>
-                      <div className={`${MUTED_CLASS} flex min-w-0 items-center gap-1`}>
-                        <span className='truncate'>{token.name}</span>
-                        {token.address === 'native' ? null : (
-                          <span className='shrink-0'>{shortAddress(token.address)}</span>
-                        )}
-                      </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        <div
+          className='thin-scrollbar min-h-0 gap-1 overflow-auto px-2 pb-2.5 pt-1 me-1'
+          onScroll={onTokenListScroll}
+        >
+          {loadingDynamicTokens && tokens.length === 0 ? (
+            <>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={`skeleton-${index}`}
+                  className='pointer-events-none flex min-h-14 items-center justify-between rounded-xl border border-transparent bg-transparent px-2 py-1.5'
+                >
+                  <div className='flex items-center gap-2.5'>
+                    <span className='h-8 w-8 rounded-full border border-[var(--skeleton-border)] bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                    <div className='grid gap-1.5'>
+                      <span className='inline-block h-2.5 w-[170px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                      <span className='inline-block h-2.5 w-[110px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
                     </div>
                   </div>
-                  <div className={`${MUTED_CLASS} shrink-0`}>
-                    {displayBalance(balances[token.address.toLowerCase()])}
-                  </div>
-                </Button>
+                  <span className='inline-block h-2.5 w-[42px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                </div>
               ))}
+            </>
+          ) : null}
 
-              {canLoadMoreTokens ? (
-                <Button
-                  variant="ghost"
-                  size="none"
-                  type='button'
-                  className='mx-2 justify-between mt-1 rounded-lg border border-[var(--neutral-border)] px-3 py-2 text-left text-xs uppercase text-[var(--neutral-text-textWeak)] hover:bg-[var(--neutral-background-raised-hover)]'
-                  onClick={() =>
-                    setVisibleCount((current) =>
-                      Math.min(current + TOKENS_PAGE_SIZE, tokens.length),
-                    )
-                  }
-                >
-                  Show more tokens ({tokens.length - visibleTokens.length} remaining)
-                </Button>
-              ) : null}
+          {visibleTokens.map((token) => (
+            <Button
+              size="none"
+              variant='ghost'
+              key={`list-${token.address}`}
+              className='flex min-h-14 w-full items-center justify-between rounded-xl border px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]'
+              onClick={() => onSelectToken(token.address)}
+            >
+              <div className='flex min-w-0 flex-1 items-center gap-2.5'>
+                <span className={TOKEN_ICON_CLASS}>
+                  <IconWithFallback
+                    src={token.logoURI ?? getTokenIconUrl(token.symbol)}
+                    alt={token.symbol}
+                    fallback={token.symbol[0]}
+                  />
+                  {selectedChainIcon ? (
+                    <span className='absolute bottom-0 right-0 grid h-4 w-4 place-items-center overflow-hidden rounded-full border-2 border-[var(--chain-badge-border)] bg-[var(--chain-badge-bg)]'>
+                      <IconWithFallback
+                        src={selectedChainIcon}
+                        alt={selectedChainKey}
+                        fallback=''
+                        showFallback={false}
+                        sizes='16px'
+                      />
+                    </span>
+                  ) : null}
+                </span>
+                <div className='min-w-0 flex flex-col gap-1'>
+                  <div className='truncate text-base font-medium text-[var(--neutral-text)]'>
+                    {token.symbol}
+                  </div>
+                  <div className={`${MUTED_CLASS} flex min-w-0 items-center gap-1`}>
+                    <span className='truncate'>{token.name}</span>
+                    {token.address === 'native' ? null : (
+                      <span className='shrink-0'>{shortAddress(token.address)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className={`${MUTED_CLASS} shrink-0`}>
+                {displayBalance(balances[token.address.toLowerCase()])}
+              </div>
+            </Button>
+          ))}
 
-              {showImportOption ? (
-                <Button
-                  variant="ghost"
-                  size="none"
-                  type='button'
-                  className={`flex min-h-14 w-full items-center justify-between rounded-xl border-2 px-2 py-1.5 text-left text-[var(--token-row-text)] ${
+          {canLoadMoreTokens ? (
+            <Button
+              variant="ghost"
+              size="none"
+              type='button'
+              className='mx-2 justify-between mt-1 rounded-lg border border-[var(--neutral-border)] px-3 py-2 text-left text-xs uppercase text-[var(--neutral-text-textWeak)] hover:bg-[var(--neutral-background-raised-hover)]'
+              onClick={() =>
+                setVisibleCount((current) =>
+                  Math.min(current + TOKENS_PAGE_SIZE, tokens.length),
+                )
+              }
+            >
+              Show more tokens ({tokens.length - visibleTokens.length} remaining)
+            </Button>
+          ) : null}
+
+          {showImportOption ? (
+            <Button
+              variant="ghost"
+              size="none"
+              type='button'
+              className={`flex min-h-14 w-full items-center justify-between rounded-xl border-2 px-2 py-1.5 text-left text-[var(--token-row-text)] ${
                     importError
                       ? 'border-[var(--alert-error-border)] bg-[var(--alert-error-bg)]'
                       : 'border-[var(--token-row-import-border)] bg-[var(--token-row-import-bg)]'
                   }`}
-                  disabled={importing || !canImport}
-                  onClick={onImportToken}
-                >
-                  <div>
-                    <div>
+              disabled={importing || !canImport}
+              onClick={onImportToken}
+            >
+              <div>
+                <div>
                       {importing
                         ? 'Importing...'
                         : canImport
                           ? 'Import token by address'
                           : 'Paste a valid 0x token address'}
                     </div>
-                    <div className={MUTED_CLASS}>
+                <div className={MUTED_CLASS}>
                       {canImport
                         ? shortAddress(importAddress)
                         : 'Only EVM token addresses are supported'}
                     </div>
-                  </div>
-                </Button>
-              ) : null}
+              </div>
+            </Button>
+          ) : null}
 
-              {importError ? (
+          {importError ? (
                 <p className='px-1 pt-1 text-xs font-medium uppercase tracking-[0.02em] text-[var(--alert-error-text)]'>
                   {importError}
                 </p>
               ) : null}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

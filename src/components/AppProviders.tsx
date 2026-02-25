@@ -18,6 +18,7 @@ import {
   polygonAmoy,
   sepolia,
 } from 'wagmi/chains';
+import { TooltipProvider } from './ui/tooltip';
 
 const dynamicEnvironmentId =
   process.env.NEXT_PUBLIC_DYNAMIC_ENV_ID ?? 'REPLACE_WITH_DYNAMIC_ENV_ID';
@@ -113,7 +114,9 @@ export function AppProviders({ children }: PropsWithChildren) {
       <DynamicUserProfile variant="modal" />
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          {children}
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </DynamicContextProvider>

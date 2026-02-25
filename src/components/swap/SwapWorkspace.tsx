@@ -10,6 +10,7 @@ import { TokenRiskAlert } from '@/components/swap/TokenRiskAlert';
 import { SwapTokenPanel } from '@/components/swap/SwapTokenPanel';
 import { TokenSelectorModal } from '@/components/swap/TokenSelectorModal';
 import { useSwapData } from '@/components/swap/hooks/useSwapData';
+// import SwapTopPanel from './SwapTopPanel';
 import { Button } from '@/components/ui/Button';
 
 type SelectorTarget = 'from' | 'to' | null;
@@ -221,12 +222,13 @@ export function SwapWorkspace() {
   }, [chainId, toToken, resetRiskCheck]);
 
   return (
-    <section className="mx-auto max-w-[440px] w-full gap-3 space-y-4">
+    <section className="mx-auto max-w-[440px] w-full gap-3">
       <TokenRiskAlert
         risk={risk ?? null}
         riskError={riskError}
         onClose={resetRiskCheck}
       />
+      {/* <SwapTopPanel /> */}
       <div className="grid gap-6">
         <div className="grid gap-1">
           <SwapTokenPanel

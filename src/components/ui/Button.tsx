@@ -5,16 +5,17 @@ const buttonVariants = ({
     size = "default",
     className = "",
 }: {
-    variant?: "default" | "icon" | "ghost";
+    variant?: "default" | "icon" | "ghost" | "outline";
     size?: "default" | "sm" | "lg" | "icon" | "none";
     className?: string;
 } = {}) => {
-    const baseStyles = "cursor-pointer flex gap-2 whitespace-nowrap outline-none transition-all disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed";
+    const baseStyles = "cursor-pointer flex gap-2 whitespace-nowrap outline-none transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
-        default: "border bg-[var(--neutral-background-raised)] border-[var(--neutral-border)] leading-[18px]",
+        default: "border bg-[var(--neutral-background-raised)] border-[var(--neutral-border)] leading-[16px]",
         icon: "border bg-[var(--neutral-background-raised)] border-[var(--neutral-border)]",
         ghost: "border-transparent bg-transparent",
+        outline: "border bg-[var(--neutral-background-raised)] border-[var(--neutral-border)] leading-[16px]",
     };
 
     const sizes = {
@@ -29,7 +30,7 @@ const buttonVariants = ({
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: "default" | "icon" | "ghost";
+    variant?: "default" | "icon" | "ghost" | "outline";
     size?: "default" | "sm" | "lg" | "icon" | "none";
     isLoading?: boolean;
 }
