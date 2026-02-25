@@ -768,9 +768,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@dynamic-labs/sdk-react-core@patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#~/.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch":
+"@dynamic-labs/sdk-react-core@patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#./.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch::locator=abrium-frontend%40workspace%3A.":
   version: 4.61.4
-  resolution: "@dynamic-labs/sdk-react-core@patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#~/.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch::version=4.61.4&hash=2004e1"
+  resolution: "@dynamic-labs/sdk-react-core@patch:@dynamic-labs/sdk-react-core@npm%3A4.61.4#./.yarn/patches/@dynamic-labs-sdk-react-core-npm-4.61.4-808dd8b8c7.patch::version=4.61.4&hash=2004e1&locator=abrium-frontend%40workspace%3A."
   dependencies:
     "@dynamic-labs-sdk/client": "npm:0.8.0"
     "@dynamic-labs-wallet/browser-wallet-client": "npm:0.0.263"
