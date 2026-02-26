@@ -1,6 +1,6 @@
 'use client'
 
-import { type UIEvent, useCallback,  useMemo, useState } from 'react'
+import { type UIEvent, useCallback, useMemo, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
@@ -9,7 +9,7 @@ import { UiToken } from '@/lib/tokens'
 import { getChainIconUrl, getTokenIconUrl } from '@/lib/icons'
 import { IconWithFallback } from '@/components/swap/IconWithFallback'
 import { displayBalance, shortAddress } from '@/components/swap/utils'
-import { ChevronDownIcon, ChevronUpIcon, SearchIcon, X } from 'lucide-react'
+import { ChevronDownIcon, ChevronUpIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 type RuntimeNetwork = {
@@ -83,14 +83,65 @@ export function TokenSelectorModal({
   const currentChainKey = resolveChainKey(chainId, selectedChainKey || undefined)
   const currentChainIcon = selectedChainIcon ?? getChainIconUrl(currentChainKey)
   const [visibleCount, setVisibleCount] = useState(TOKENS_PAGE_SIZE)
-  const hasSearchQuery = query.trim().length > 0
   const visibleTokens = useMemo(() => {
-    if (hasSearchQuery) return tokens
     return tokens.slice(0, visibleCount)
-  }, [hasSearchQuery, tokens, visibleCount])
-  const canLoadMoreTokens = !hasSearchQuery && visibleTokens.length < tokens.length
+  }, [tokens, visibleCount])
+  const canLoadMoreTokens = visibleTokens.length < tokens.length
 
-
+  const tokenRows = useMemo(
+    () =>
+      visibleTokens.map((token) => (
+        <Button
+          size="none"
+          variant='ghost'
+          key={`list-${token.address}`}
+          className='flex min-h-14 w-full items-center justify-between rounded-xl border px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]'
+          onClick={() => onSelectToken(token.address)}
+        >
+          <div className='flex min-w-0 flex-1 items-center gap-2.5'>
+            <span className={TOKEN_ICON_CLASS}>
+              <IconWithFallback
+                src={token.logoURI ?? getTokenIconUrl(token.symbol)}
+                alt={token.symbol}
+                fallback={token.symbol[0]}
+              />
+              {selectedChainIcon ? (
+                <span className='absolute bottom-0 right-0 grid h-4 w-4 place-items-center overflow-hidden rounded-full border-2 border-[var(--chain-badge-border)] bg-[var(--chain-badge-bg)]'>
+                  <IconWithFallback
+                    src={selectedChainIcon}
+                    alt={selectedChainKey}
+                    fallback=''
+                    showFallback={false}
+                    sizes='16px'
+                  />
+                </span>
+              ) : null}
+            </span>
+            <div className='min-w-0 flex flex-col gap-1'>
+              <div className='truncate text-base font-medium text-[var(--neutral-text)]'>
+                {token.symbol}
+              </div>
+              <div className={`${MUTED_CLASS} flex min-w-0 items-center gap-1`}>
+                <span className='truncate'>{token.name}</span>
+                {token.address === 'native' ? null : (
+                  <span className='shrink-0'>{shortAddress(token.address)}</span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className={`${MUTED_CLASS} shrink-0`}>
+            {displayBalance(balances[token.address.toLowerCase()])}
+          </div>
+        </Button>
+      )),
+    [
+      balances,
+      onSelectToken,
+      selectedChainIcon,
+      selectedChainKey,
+      visibleTokens,
+    ],
+  )
 
   const onTokenListScroll = useCallback(
     (event: UIEvent<HTMLDivElement>) => {
@@ -133,7 +184,10 @@ export function TokenSelectorModal({
           <input
             className="min-h-0 flex-1 border-0 bg-transparent p-0 text-base text-[var(--neutral-text-textWeek)] outline-none placeholder:text-[var(--neutral-text-placeholder)]"
             value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
+            onChange={(event) => {
+              setVisibleCount(TOKENS_PAGE_SIZE);
+              onQueryChange(event.target.value);
+            }}
             placeholder="Search tokens or paste address"
           />
           <div className="relative ml-auto flex justify-center">
@@ -174,6 +228,7 @@ export function TokenSelectorModal({
                       : 'border border-transparent bg-transparent text-[var(--network-item-text)] hover:bg-[var(--neutral-background-raised-hover)] focus:bg-[var(--neutral-background-raised-hover)]'
                       }`}
                     onSelect={() => {
+                      setVisibleCount(TOKENS_PAGE_SIZE);
                       onChainSelect(network.chain.id);
                       setNetworkMenuOpen(false);
                     }}
@@ -225,50 +280,7 @@ export function TokenSelectorModal({
             </>
           ) : null}
 
-          {visibleTokens.map((token) => (
-            <Button
-              size="none"
-              variant='ghost'
-              key={`list-${token.address}`}
-              className='flex min-h-14 w-full items-center justify-between rounded-xl border px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]'
-              onClick={() => onSelectToken(token.address)}
-            >
-              <div className='flex min-w-0 flex-1 items-center gap-2.5'>
-                <span className={TOKEN_ICON_CLASS}>
-                  <IconWithFallback
-                    src={token.logoURI ?? getTokenIconUrl(token.symbol)}
-                    alt={token.symbol}
-                    fallback={token.symbol[0]}
-                  />
-                  {selectedChainIcon ? (
-                    <span className='absolute bottom-0 right-0 grid h-4 w-4 place-items-center overflow-hidden rounded-full border-2 border-[var(--chain-badge-border)] bg-[var(--chain-badge-bg)]'>
-                      <IconWithFallback
-                        src={selectedChainIcon}
-                        alt={selectedChainKey}
-                        fallback=''
-                        showFallback={false}
-                        sizes='16px'
-                      />
-                    </span>
-                  ) : null}
-                </span>
-                <div className='min-w-0 flex flex-col gap-1'>
-                  <div className='truncate text-base font-medium text-[var(--neutral-text)]'>
-                    {token.symbol}
-                  </div>
-                  <div className={`${MUTED_CLASS} flex min-w-0 items-center gap-1`}>
-                    <span className='truncate'>{token.name}</span>
-                    {token.address === 'native' ? null : (
-                      <span className='shrink-0'>{shortAddress(token.address)}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className={`${MUTED_CLASS} shrink-0`}>
-                {displayBalance(balances[token.address.toLowerCase()])}
-              </div>
-            </Button>
-          ))}
+          {tokenRows}
 
           {canLoadMoreTokens ? (
             <Button

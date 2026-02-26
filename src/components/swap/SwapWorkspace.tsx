@@ -125,10 +125,14 @@ export function SwapWorkspace() {
     });
   }, [deferredQuery, sortedTokens]);
 
+  const chainTokenAddressSet = useMemo(
+    () => new Set(chainTokens.map((token) => token.address.toLowerCase())),
+    [chainTokens],
+  );
   const importAddress = query.trim();
   const normalizedImportAddress = importAddress.toLowerCase();
-  const hasTokenWithImportAddress = chainTokens.some(
-    (t) => t.address.toLowerCase() === normalizedImportAddress,
+  const hasTokenWithImportAddress = chainTokenAddressSet.has(
+    normalizedImportAddress,
   );
   const canImport = isAddress(importAddress) && !hasTokenWithImportAddress;
   const showImportOption =
