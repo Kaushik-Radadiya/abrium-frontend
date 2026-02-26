@@ -2,6 +2,8 @@ import { apiClient } from './api.client';
 import { BASE_URLS, ensureApiBaseUrlConfigured } from './api.constants';
 import type {
   ApiResponseEnvelope,
+  CatalogChainResponse,
+  CatalogTokenResponse,
   TokenRiskResponse,
 } from './api.types';
 
@@ -45,4 +47,27 @@ export async function fetchTokenRisk(chainId: number, tokenAddress: string) {
     },
   );
   return unwrapResponseData(response, 'Risk response was empty');
+}
+
+export async function fetchCatalogChains() {
+  ensureApiBaseUrlConfigured();
+  const response = await apiClient<
+    ApiResponseEnvelope<CatalogChainResponse[]> | CatalogChainResponse[]
+  >(`${BASE_URLS.CATALOG}/chains`, {
+    cache: 'no-store',
+  });
+  return unwrapResponseData(response, 'Catalog chains response was empty');
+}
+
+export async function fetchCatalogTokens(chainId: number) {
+  ensureApiBaseUrlConfigured();
+  const params = new URLSearchParams({
+    chainId: String(chainId),
+  });
+  const response = await apiClient<
+    ApiResponseEnvelope<CatalogTokenResponse[]> | CatalogTokenResponse[]
+  >(`${BASE_URLS.CATALOG}/tokens?${params.toString()}`, {
+    cache: 'no-store',
+  });
+  return unwrapResponseData(response, 'Catalog tokens response was empty');
 }

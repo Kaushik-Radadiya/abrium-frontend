@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button'
 type RuntimeNetwork = {
   chain: SupportedChain
   chainKey?: string
+  logoURI?: string
 }
 
 type Props = {
@@ -48,8 +49,8 @@ const TOKENS_PAGE_SIZE = 200
 
 function resolveChainKey(chainId: number, chainKey?: string) {
   if (chainKey) return chainKey
-  if (chainId === 1) return 'ethereum'
-  if (chainId === 137) return 'polygon'
+  if (chainId === 1) return 'eth'
+  if (chainId === 137) return 'pol'
   if (chainId === 11155111) return 'ethereum'
   if (chainId === 80002) return 'polygon'
   if (chainId === 84532) return 'base'
@@ -180,9 +181,12 @@ export function TokenSelectorModal({
                     <span className="inline-flex items-center gap-2">
                       <span className="relative size-5 overflow-hidden rounded-full border-0">
                         <IconWithFallback
-                          src={getChainIconUrl(
-                            resolveChainKey(network.chain.id, network.chainKey),
-                          )}
+                          src={
+                            network.logoURI ??
+                            getChainIconUrl(
+                              resolveChainKey(network.chain.id, network.chainKey),
+                            )
+                          }
                           alt={network.chain.name}
                           fallback={network.chain.name[0] ?? 'N'}
                           sizes="30px"

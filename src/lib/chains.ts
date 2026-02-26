@@ -79,7 +79,7 @@ export function getChain(chainId: number) {
   return SUPPORTED_CHAINS.find((chain) => chain.id === chainId);
 }
 
-export const STARGATE_CHAIN_KEY_BY_ID: Record<number, string> = {
+export const CHAIN_KEY_BY_ID: Record<number, string> = {
   1: 'ethereum',
   137: 'polygon',
   11155111: 'ethereum',
@@ -88,5 +88,5 @@ export const STARGATE_CHAIN_KEY_BY_ID: Record<number, string> = {
 };
 
 export function getChainKey(chainId: number) {
-  return STARGATE_CHAIN_KEY_BY_ID[chainId] ?? '';
+  return CHAIN_KEY_BY_ID[chainId] ?? '';
 }

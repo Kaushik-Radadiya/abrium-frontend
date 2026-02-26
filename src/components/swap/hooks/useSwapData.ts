@@ -9,16 +9,9 @@ import {
   http,
   isAddress,
 } from 'viem';
-import {
-  baseSepolia,
-  mainnet,
-  polygon,
-  polygonAmoy,
-  sepolia,
-} from 'viem/chains';
 import { SupportedChain, getChainKey } from '@/lib/chains';
 import { listTokensForChain, UiToken } from '@/lib/tokens';
-import { fetchStargateNetworks, fetchStargateTokens } from '@/lib/stargate';
+import { fetchCatalogChains, fetchCatalogTokens } from '@/lib/api.requests';
 import { getChainIconUrl } from '@/lib/icons';
 import { dedupeTokens } from '@/components/swap/utils';
 
@@ -27,6 +20,7 @@ type ImportedState = Record<number, UiToken[]>;
 type RuntimeNetwork = {
   chain: SupportedChain;
   chainKey?: string;
+  logoURI?: string;
 };
 
 type Params = {
@@ -39,9 +33,6 @@ type Params = {
 };
 
 const IMPORT_CACHE_KEY = 'abrium.imported.tokens.v1';
-const STARGATE_NETWORKS_CACHE_KEY = 'abrium.stargate.networks.v1';
-const STARGATE_TOKENS_CACHE_PREFIX = 'abrium.stargate.tokens.v1';
-const TOKEN_METADATA_CACHE_TTL_MS = 30 * 60 * 1000;
 const BALANCE_REFRESH_MS = 30_000;
 const MULTICALL_CHUNK_SIZE = 100;
 const TOKEN_NOT_FOUND_IMPORT_ERROR = 'Token not found or invalid token address.';
@@ -69,23 +60,8 @@ const IMPORT_LOOKUP_UNAVAILABLE_FRAGMENTS = [
   'rate limit',
 ] as const;
 
-type TimedCache<T> = {
-  updatedAt: number;
-  data: T;
-};
-
-function getViemChain(chainId: number) {
-  if (chainId === mainnet.id) return mainnet;
-  if (chainId === polygon.id) return polygon;
-  if (chainId === sepolia.id) return sepolia;
-  if (chainId === polygonAmoy.id) return polygonAmoy;
-  if (chainId === baseSepolia.id) return baseSepolia;
-  return mainnet;
-}
-
-function createChainClient(chainId: number, rpcUrl: string) {
+function createChainClient(rpcUrl: string) {
   return createPublicClient({
-    chain: getViemChain(chainId),
     transport: http(rpcUrl),
   });
 }
@@ -104,35 +80,6 @@ function readLocalStorageJson<T>(key: string): T | null {
 
 function readImportedTokensCache() {
   return readLocalStorageJson<ImportedState>(IMPORT_CACHE_KEY) ?? {};
-}
-
-function readTimedLocalCache<T>(key: string, ttlMs: number): T | null {
-  const cached = readLocalStorageJson<TimedCache<T>>(key);
-  if (!cached || typeof cached !== 'object') return null;
-
-  const updatedAt = cached.updatedAt;
-  if (typeof updatedAt !== 'number' || Date.now() - updatedAt > ttlMs) {
-    return null;
-  }
-
-  return cached.data ?? null;
-}
-
-function writeTimedLocalCache<T>(key: string, data: T) {
-  if (typeof window === 'undefined') return;
-
-  try {
-    const payload: TimedCache<T> = {
-      updatedAt: Date.now(),
-      data,
-    };
-    window.localStorage.setItem(key, JSON.stringify(payload));
-  } catch {
-  }
-}
-
-function getStargateTokensCacheKey(chainId: number, chainKey: string) {
-  return `${STARGATE_TOKENS_CACHE_PREFIX}.${chainId}.${chainKey.toLowerCase()}`;
 }
 
 function includesAnyFragment(
@@ -167,12 +114,11 @@ function normalizeImportTokenError(rawMessage?: string) {
 }
 
 async function fetchBalancesForTokens(params: {
-  chainId: number;
   rpcUrl: string;
   walletAddress: `0x${string}`;
   tokens: UiToken[];
 }) {
-  const client = createChainClient(params.chainId, params.rpcUrl);
+  const client = createChainClient(params.rpcUrl);
   const next: Record<string, string> = Object.fromEntries(
     params.tokens.map((token) => [token.address.toLowerCase(), '0.0000']),
   );
@@ -250,31 +196,27 @@ export function useSwapData({
     );
   }, [importedByChain]);
 
-  const cachedRuntimeNetworks = useMemo(
-    () =>
-      readTimedLocalCache<RuntimeNetwork[]>(
-        STARGATE_NETWORKS_CACHE_KEY,
-        TOKEN_METADATA_CACHE_TTL_MS,
-      ) ?? EMPTY_RUNTIME_NETWORKS,
-    [],
-  );
-
-  const { data: dynamicRuntimeNetworks = cachedRuntimeNetworks } = useQuery({
-    queryKey: ['stargate', 'networks'],
+  const { data: dynamicRuntimeNetworks = EMPTY_RUNTIME_NETWORKS } = useQuery({
+    queryKey: ['catalog', 'networks'],
     queryFn: async () => {
-      const networks = await fetchStargateNetworks();
-      writeTimedLocalCache(STARGATE_NETWORKS_CACHE_KEY, networks);
-      return networks;
+      const chains = await fetchCatalogChains();
+      return chains.map((chain) => ({
+        chain: {
+          id: chain.id,
+          name: chain.name,
+          rpcUrls: chain.rpcUrls ?? [],
+          explorerUrl: chain.explorerUrl ?? '',
+          nativeSymbol: chain.nativeSymbol,
+          scope: chain.scope,
+        },
+        chainKey: chain.chainKey,
+        logoURI: chain.logoURI,
+      })) satisfies RuntimeNetwork[];
     },
-    initialData:
-      cachedRuntimeNetworks.length > 0 ? cachedRuntimeNetworks : undefined,
-    staleTime: TOKEN_METADATA_CACHE_TTL_MS,
-    gcTime: TOKEN_METADATA_CACHE_TTL_MS * 2,
     retry: 1,
   });
 
   const uniqueRuntimeNetworks = useMemo(() => {
-    const allowedChainIds = new Set(staticChains.map((chain) => chain.id));
     const map = new Map<number, RuntimeNetwork>();
 
     for (const chain of staticChains) {
@@ -282,7 +224,6 @@ export function useSwapData({
     }
 
     for (const network of dynamicRuntimeNetworks) {
-      if (!allowedChainIds.has(network.chain.id)) continue;
       const existing = map.get(network.chain.id);
       if (!existing || (!existing.chainKey && network.chainKey)) {
         map.set(network.chain.id, network);
@@ -318,49 +259,20 @@ export function useSwapData({
   }, [chainId, selectedRuntimeNetwork]);
 
   const selectedChainIcon = useMemo(() => {
+    if (selectedRuntimeNetwork?.logoURI) return selectedRuntimeNetwork.logoURI;
     if (!selectedChainKey) return null;
     return getChainIconUrl(selectedChainKey);
-  }, [selectedChainKey]);
-
-  const stargateTokensCacheKey = useMemo(() => {
-    if (!selectedChainKey) return null;
-    return getStargateTokensCacheKey(chainId, selectedChainKey);
-  }, [chainId, selectedChainKey]);
-
-  const cachedDynamicTokensForChain = useMemo(() => {
-    if (!stargateTokensCacheKey) return EMPTY_TOKENS;
-    return (
-      readTimedLocalCache<UiToken[]>(
-        stargateTokensCacheKey,
-        TOKEN_METADATA_CACHE_TTL_MS,
-      ) ?? EMPTY_TOKENS
-    );
-  }, [stargateTokensCacheKey]);
+  }, [selectedChainKey, selectedRuntimeNetwork]);
 
   const {
-    data: dynamicTokensForChain = cachedDynamicTokensForChain,
+    data: dynamicTokensForChain = EMPTY_TOKENS,
     isLoading: loadingDynamicTokens,
   } = useQuery({
-    queryKey: ['stargate', 'tokens', chainId, selectedChainKey],
+    queryKey: ['catalog', 'tokens', chainId],
     queryFn: async () => {
-      if (!selectedChainKey) return EMPTY_TOKENS;
-      const tokens = await fetchStargateTokens({
-        chainId,
-        chainKey: selectedChainKey,
-      });
-      const dedupedTokens = dedupeTokens(tokens);
-      if (stargateTokensCacheKey) {
-        writeTimedLocalCache(stargateTokensCacheKey, dedupedTokens);
-      }
-      return dedupedTokens;
+      const tokens = await fetchCatalogTokens(chainId);
+      return dedupeTokens(tokens);
     },
-    enabled: Boolean(selectedChainKey),
-    initialData:
-      cachedDynamicTokensForChain.length > 0
-        ? cachedDynamicTokensForChain
-        : undefined,
-    staleTime: TOKEN_METADATA_CACHE_TTL_MS,
-    gcTime: TOKEN_METADATA_CACHE_TTL_MS * 2,
     retry: 1,
   });
   const dynamicTokensCount = dynamicTokensForChain.length;
@@ -417,7 +329,7 @@ export function useSwapData({
 
       let activeRpcUrl: string | null = null;
       for (const rpcUrl of orderedRpcUrls) {
-        const probeClient = createChainClient(chainId, rpcUrl);
+        const probeClient = createChainClient(rpcUrl);
         try {
           await probeClient.getBlockNumber();
           activeRpcUrl = rpcUrl;
@@ -443,7 +355,6 @@ export function useSwapData({
       }
 
       const next = await fetchBalancesForTokens({
-        chainId,
         rpcUrl: activeRpcUrl,
         walletAddress: walletAddress as `0x${string}`,
         tokens: trackedBalanceTokens,
@@ -502,7 +413,7 @@ export function useSwapData({
 
       for (const rpcUrl of orderedRpcUrls) {
         try {
-          const client = createChainClient(chainId, rpcUrl);
+          const client = createChainClient(rpcUrl);
           const [nextSymbol, nextName, nextDecimals] = await Promise.all([
             client.readContract({
               address,

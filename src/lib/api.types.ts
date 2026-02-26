@@ -30,6 +30,26 @@ export type TokenRiskResponse = {
   alertMessage: string;
 };
 
+export type CatalogChainResponse = {
+  id: number;
+  chainKey: string;
+  name: string;
+  rpcUrls: string[];
+  explorerUrl: string;
+  nativeSymbol: string;
+  logoURI?: string;
+  scope: 'production' | 'development';
+};
+
+export type CatalogTokenResponse = {
+  chainId: number;
+  address: `0x${string}` | 'native';
+  symbol: string;
+  name: string;
+  decimals: number;
+  logoURI?: string;
+};
+
 export type ApiResponseEnvelope<T> = {
   error: boolean;
   success: boolean;

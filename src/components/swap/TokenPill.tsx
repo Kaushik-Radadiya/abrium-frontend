@@ -15,9 +15,9 @@ type Props = {
 }
 
 function resolveChainLabel(token?: UiToken, selectedChainKey?: string) {
-  if (selectedChainKey === 'ethereum') return 'ETH'
-  if (selectedChainKey === 'polygon') return 'POL'
-  if (selectedChainKey === 'base') return 'ETH'
+  if (selectedChainKey === 'ethereum' || selectedChainKey === 'eth') return 'ETH'
+  if (selectedChainKey === 'polygon' || selectedChainKey === 'pol') return 'POL'
+  if (selectedChainKey === 'base' || selectedChainKey === 'bas') return 'ETH'
   if (!token) return ''
   return getChain(token.chainId)?.nativeSymbol ?? token.symbol
 }
