@@ -311,7 +311,7 @@ export function SwapWorkspace() {
   );
 
   return (
-    <section className='mx-auto max-w-[440px] w-full flex flex-col gap-4'>
+    <section className='mx-auto min-w-[440px] max-w-max w-full flex flex-col gap-4'>
       <TokenRiskAlert
         risk={risk ?? null}
         riskError={riskError}

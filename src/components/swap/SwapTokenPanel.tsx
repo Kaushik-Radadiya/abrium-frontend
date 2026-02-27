@@ -68,7 +68,7 @@ export function SwapTokenPanel({
           <div className='grid gap-1.5'>
             {editable ? (
               <input
-                className='h-auto min-h-0 border-0 bg-transparent p-0 w-full font-normal font-mono text-3xl text-[var(--swap-amount)] outline-none placeholder:text-[var(--neutral-text-placeholder)]'
+                className='h-auto min-h-0 max-w-[248px] border-0 bg-transparent p-0 w-full font-normal font-mono text-3xl text-[var(--swap-amount)] outline-none placeholder:text-[var(--neutral-text-placeholder)]'
                 value={amount}
                 type="number"
                 onChange={(event) => onAmountChange?.(event.target.value)}
