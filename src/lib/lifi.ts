@@ -1,4 +1,4 @@
-import { createConfig, getQuote, HTTPError } from '@lifi/sdk';
+import { createConfig, getQuote } from '@lifi/sdk';
 import type { LiFiStep, Step } from '@lifi/types';
 
 const LIFI_API_KEY = process.env.NEXT_PUBLIC_LIFI_API_KEY ?? '';
@@ -34,8 +34,36 @@ export class LiFiQuoteError extends Error {
 }
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-
 const NO_ROUTES_CODE = 1002;
+
+function isHttpError(err: unknown): err is {
+  status: number;
+  responseBody?: { code?: number; message?: string };
+  message?: string;
+  buildAdditionalDetails?: () => Promise<unknown>;
+} {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'status' in err &&
+    typeof (err as Record<string, unknown>).status === 'number'
+  );
+}
+
+function extractCleanMessage(err: {
+  status: number;
+  responseBody?: { message?: string };
+  message?: string;
+}): string {
+  if (err.responseBody?.message) return err.responseBody.message;
+
+  const raw = err.message ?? '';
+  const afterPrefix = raw.replace(/^.*?\bstatus code \d+\.\s*/i, '');
+  const stripped = afterPrefix
+    .replace(/\s*LI\.?FI SDK version[:\s].*$/i, '')
+    .trim();
+  return stripped || `LI.FI API error (HTTP ${err.status})`;
+}
 
 function toApiTokenAddress(token: string): string {
   return token === 'native' ? ZERO_ADDRESS : token.toLowerCase();
@@ -52,8 +80,7 @@ function sumBigIntStrings(values: Array<string | undefined>): string {
     if (!v) continue;
     try {
       total += BigInt(v);
-    } catch {
-    }
+    } catch {}
   }
   return total.toString();
 }
@@ -162,19 +189,23 @@ export async function fetchSwapQuote(
 
     return mapSdkQuote(step, payload.swapper);
   } catch (err) {
-    if (err instanceof HTTPError) {
-      await err.buildAdditionalDetails().catch(() => {});
+    if (isHttpError(err)) {
+      await err.buildAdditionalDetails?.().catch(() => {});
       const code = err.responseBody?.code;
-      const noRouteFound = err.status === 404 && code === NO_ROUTES_CODE;
+      const noRouteFound = code === NO_ROUTES_CODE;
       throw new LiFiQuoteError(
-        err.responseBody?.message ?? `LI.FI API error (HTTP ${err.status})`,
+        extractCleanMessage(err),
         err.status,
         noRouteFound,
       );
     }
 
-    throw new LiFiQuoteError(
-      err instanceof Error ? err.message : 'Unknown error fetching quote',
-    );
+    const raw =
+      err instanceof Error ? err.message : 'Unknown error fetching quote';
+    const cleaned = raw
+      .replace(/^.*?\bstatus code \d+\.\s*/i, '')
+      .replace(/\s*LI\.?FI SDK version[:\s].*$/i, '')
+      .trim();
+    throw new LiFiQuoteError(cleaned || raw);
   }
 }

@@ -5,7 +5,7 @@ export function getQuoteErrorMessage(error: unknown): string | null {
 
   if (error instanceof LiFiQuoteError) {
     if (error.noRouteFound) {
-      return 'No route found for this token pair. Try a different amount or token.';
+      return error.message || 'No route found for this token pair.';
     }
     if (error.message) return error.message;
   }
