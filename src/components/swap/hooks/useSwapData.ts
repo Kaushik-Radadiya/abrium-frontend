@@ -214,6 +214,7 @@ export function useSwapData({
       })) satisfies RuntimeNetwork[];
     },
     retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   const uniqueRuntimeNetworks = useMemo(() => {
@@ -274,6 +275,7 @@ export function useSwapData({
       return dedupeTokens(tokens);
     },
     retry: 1,
+    refetchOnWindowFocus: false,
   });
   const dynamicTokensCount = dynamicTokensForChain.length;
 

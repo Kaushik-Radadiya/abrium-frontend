@@ -29,7 +29,7 @@ export function WalletConnectCard() {
       onClick={() =>
         primaryWallet ? setShowDynamicUserProfile(true) : setShowAuthFlow(true)
       }
-      className={`!text-sm justify-center ${address ? "" : "!bg-[var(--neutral-background-strong)]"}`}
+      className={`!text-sm items-center justify-center ${address ? "" : "!bg-[var(--neutral-background-strong)]"}`}
     >
       {/* {primaryWallet?.connector?.metadata?.icon ? (
         <img

@@ -188,7 +188,7 @@ export function SwapWorkspace() {
       return;
     }
 
-    
+
     try {
       await checkTokenRisk({
         chainId,
@@ -226,55 +226,51 @@ export function SwapWorkspace() {
   }, [chainId, toToken, resetRiskCheck]);
 
   return (
-    <section className="mx-auto max-w-[440px] w-full gap-3">
+    <section className="mx-auto max-w-[440px] w-full gap-3 flex flex-col gap-4">
       <TokenRiskAlert
         risk={risk ?? null}
         riskError={riskError}
         onClose={resetRiskCheck}
       />
       {/* <SwapTopPanel /> */}
-      <div className="grid gap-6">
-        <div className="grid gap-1">
-          <SwapTokenPanel
-            label="Send"
-            amount={amount}
-            token={selectedFromToken}
-            selectedChainIcon={selectedChainIcon}
-            selectedChainKey={selectedChainKey}
-            onSelectToken={() => setSelectorTarget('from')}
-            editable
-            onAmountChange={setAmount}
-          />
-          <Button
-            className="-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
-            onClick={onFlipTokens}
-            aria-label="Swap tokens"
-          >
-            <ArrowDownUp className="text-[var(--arrow-icon-btn)] size-4" />
-          </Button>
-          <SwapTokenPanel
-            label="Receive"
-            amount="0.0"
-            token={selectedToToken}
-            selectedChainIcon={selectedChainIcon}
-            selectedChainKey={selectedChainKey}
-            onSelectToken={() => setSelectorTarget('to')}
-          />
-        </div>
-
+      <div className="flex flex-col gap-1">
+        <SwapTokenPanel
+          label="Send"
+          amount={amount}
+          token={selectedFromToken}
+          selectedChainIcon={selectedChainIcon}
+          selectedChainKey={selectedChainKey}
+          onSelectToken={() => setSelectorTarget('from')}
+          editable
+          onAmountChange={setAmount}
+        />
         <Button
-          className="rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base"
-          onClick={onPrimaryAction}
-          disabled={primaryWallet ? !hasTokenSelection || isCheckingRisk : false}
+          className="-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
+          onClick={onFlipTokens}
+          aria-label="Swap tokens"
         >
-          {primaryWallet
-            ? isCheckingRisk
-              ? 'Checking risk...'
-              : 'Review Swap'
-            : 'Connect Wallet'}
+          <ArrowDownUp className="text-[var(--arrow-icon-btn)] size-4" />
         </Button>
+        <SwapTokenPanel
+          label="Receive"
+          amount="0.0"
+          token={selectedToToken}
+          selectedChainIcon={selectedChainIcon}
+          selectedChainKey={selectedChainKey}
+          onSelectToken={() => setSelectorTarget('to')}
+        />
       </div>
-
+      <Button
+        className="rounded-full justify-center w-full border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base"
+        onClick={onPrimaryAction}
+        disabled={primaryWallet ? !hasTokenSelection || isCheckingRisk : false}
+      >
+        {primaryWallet
+          ? isCheckingRisk
+            ? 'Checking risk...'
+            : 'Review Swap'
+          : 'Connect Wallet'}
+      </Button>
       <TokenSelectorModal
         open={Boolean(selectorTarget)}
         query={query}
@@ -301,6 +297,6 @@ export function SwapWorkspace() {
           setNetworkMenuOpen(false);
         }}
       />
-    </section>
+    </section >
   );
 }
