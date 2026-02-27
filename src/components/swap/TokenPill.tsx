@@ -33,11 +33,11 @@ export function TokenPill({
   if (!token) {
     return (
       <Button
-        className='h-12 items-center gap-2 !rounded-full !border-transparent !bg-[var(--token-pill-empty-bg)] px-4 py-0 text-base font-semibold text-[var(--token-pill-empty-text)] hover:!bg-[var(--token-pill-empty-bg-hover)]'
-        type='button'
+        className="px-2 py-3 font-medium bg-[var(--neutral-background-strong)] text-[var(--neutral-background)] text-base leading-4"
+        type="button"
         onClick={onClick}
       >
-        <span className='whitespace-nowrap'>Select token</span>
+        <span className="whitespace-nowrap">Select token</span>
         <ChevronDown size={18} />
       </Button>
     );
@@ -47,12 +47,12 @@ export function TokenPill({
 
   return (
     <Button
-      className='!p-2 gap-3 !bg-transparent items-center'
-      type='button'
+      className="!p-2 gap-3 !bg-transparent items-center"
+      type="button"
       onClick={onClick}
     >
-      <span className='inline-flex items-center gap-3'>
-        <span className='relative grid h-12 w-12 place-items-center overflow-visible rounded-full border-0 bg-[var(--token-icon-bg)] text-sm font-bold text-[var(--token-icon-text)]'>
+      <span className="inline-flex items-center gap-3">
+        <span className="relative grid h-12 w-12 place-items-center overflow-visible rounded-full border-0 bg-[var(--token-icon-bg)] text-sm font-bold text-[var(--token-icon-text)]">
           <IconWithFallback
             src={
               token
@@ -63,27 +63,27 @@ export function TokenPill({
             fallback={token?.symbol?.[0] ?? 'T'}
           />
           {selectedChainIcon ? (
-            <span className='absolute -bottom-[3px] -right-[3px] grid h-[16px] w-[16px] place-items-center overflow-hidden rounded-full border-2 border-[var(--token-pill-chain-badge-border)] bg-[var(--token-pill-chain-badge-bg)] shadow-[var(--token-pill-chain-badge-shadow)]'>
+            <span className="absolute -bottom-[3px] -right-[3px] grid h-[16px] w-[16px] place-items-center overflow-hidden rounded-full border-2 border-[var(--token-pill-chain-badge-border)] bg-[var(--token-pill-chain-badge-bg)] shadow-[var(--token-pill-chain-badge-shadow)]">
               <IconWithFallback
                 src={selectedChainIcon}
                 alt={selectedChainKey ?? 'chain'}
-                fallback=''
+                fallback=""
                 showFallback={false}
-                sizes='16px'
+                sizes="16px"
               />
             </span>
           ) : null}
         </span>
-        <span className='flex flex-col gap-1 items-start'>
-          <span className='whitespace-nowrap text-base font-medium text-[var(--neutral-text)]'>
+        <span className="flex flex-col gap-1 items-start">
+          <span className="whitespace-nowrap text-base font-medium text-[var(--neutral-text)]">
             {token.symbol}
           </span>
-          <span className='text-xs uppercase text-[var(--neutral-text-textWeak)]'>
+          <span className="text-xs uppercase text-[var(--neutral-text-textWeak)]">
             {chainLabel}
           </span>
         </span>
       </span>
-      <span className='text-sm leading-none text-[var(--token-pill-muted)]'>
+      <span className="text-sm leading-none text-[var(--token-pill-muted)]">
         <ChevronDown size={16} />
       </span>
     </Button>

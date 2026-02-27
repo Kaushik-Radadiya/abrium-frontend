@@ -70,6 +70,7 @@ export function SwapTokenPanel({
               <input
                 className='h-auto min-h-0 border-0 bg-transparent p-0 w-full font-normal font-mono text-3xl text-[var(--swap-amount)] outline-none placeholder:text-[var(--neutral-text-placeholder)]'
                 value={amount}
+                type="number"
                 onChange={(event) => onAmountChange?.(event.target.value)}
                 placeholder='0.0'
                 aria-label={`${label} amount`}
