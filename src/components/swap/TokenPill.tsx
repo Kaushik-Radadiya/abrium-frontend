@@ -1,25 +1,27 @@
-'use client'
+'use client';
 
-import { UiToken } from '@/lib/tokens'
-import { getTokenIconUrl } from '@/lib/icons'
-import { IconWithFallback } from '@/components/swap/IconWithFallback'
-import { getChain } from '@/lib/chains'
-import { ChevronDown } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { UiToken } from '@/lib/tokens';
+import { getTokenIconUrl } from '@/lib/icons';
+import { IconWithFallback } from '@/components/swap/IconWithFallback';
+import { getChain } from '@/lib/chains';
+import { ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 type Props = {
-  token?: UiToken
-  selectedChainIcon?: string | null
-  selectedChainKey?: string
-  onClick: () => void
-}
+  token?: UiToken;
+  selectedChainIcon?: string | null;
+  selectedChainKey?: string;
+  onClick: () => void;
+};
 
 function resolveChainLabel(token?: UiToken, selectedChainKey?: string) {
-  if (selectedChainKey === 'ethereum' || selectedChainKey === 'eth') return 'ETH'
-  if (selectedChainKey === 'polygon' || selectedChainKey === 'pol') return 'POL'
-  if (selectedChainKey === 'base' || selectedChainKey === 'bas') return 'ETH'
-  if (!token) return ''
-  return getChain(token.chainId)?.nativeSymbol ?? token.symbol
+  if (selectedChainKey === 'ethereum' || selectedChainKey === 'eth')
+    return 'ETH';
+  if (selectedChainKey === 'polygon' || selectedChainKey === 'pol')
+    return 'POL';
+  if (selectedChainKey === 'base' || selectedChainKey === 'bas') return 'ETH';
+  if (!token) return '';
+  return getChain(token.chainId)?.nativeSymbol ?? token.symbol;
 }
 
 export function TokenPill({
@@ -28,7 +30,20 @@ export function TokenPill({
   selectedChainKey,
   onClick,
 }: Props) {
-  const chainLabel = resolveChainLabel(token, selectedChainKey)
+  if (!token) {
+    return (
+      <Button
+        className='h-12 items-center gap-2 !rounded-full !border-transparent !bg-[var(--token-pill-empty-bg)] px-4 py-0 text-base font-semibold text-[var(--token-pill-empty-text)] hover:!bg-[var(--token-pill-empty-bg-hover)]'
+        type='button'
+        onClick={onClick}
+      >
+        <span className='whitespace-nowrap'>Select token</span>
+        <ChevronDown size={18} />
+      </Button>
+    );
+  }
+
+  const chainLabel = resolveChainLabel(token, selectedChainKey);
 
   return (
     <Button
@@ -39,7 +54,11 @@ export function TokenPill({
       <span className='inline-flex items-center gap-3'>
         <span className='relative grid h-12 w-12 place-items-center overflow-visible rounded-full border-0 bg-[var(--token-icon-bg)] text-sm font-bold text-[var(--token-icon-text)]'>
           <IconWithFallback
-            src={token ? token.logoURI ?? getTokenIconUrl(token.symbol) : undefined}
+            src={
+              token
+                ? (token.logoURI ?? getTokenIconUrl(token.symbol))
+                : undefined
+            }
             alt={token?.symbol ?? 'Token'}
             fallback={token?.symbol?.[0] ?? 'T'}
           />
@@ -57,7 +76,7 @@ export function TokenPill({
         </span>
         <span className='flex flex-col gap-1 items-start'>
           <span className='whitespace-nowrap text-base font-medium text-[var(--neutral-text)]'>
-            {token?.symbol ?? 'Select'}
+            {token.symbol}
           </span>
           <span className='text-xs uppercase text-[var(--neutral-text-textWeak)]'>
             {chainLabel}
@@ -68,5 +87,5 @@ export function TokenPill({
         <ChevronDown size={16} />
       </span>
     </Button>
-  )
+  );
 }

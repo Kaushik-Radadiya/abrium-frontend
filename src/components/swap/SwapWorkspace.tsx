@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { ArrowDownUp } from 'lucide-react';
 import { getAddress, isAddress } from 'viem';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
@@ -10,8 +10,21 @@ import { TokenRiskAlert } from '@/components/swap/TokenRiskAlert';
 import { SwapTokenPanel } from '@/components/swap/SwapTokenPanel';
 import { TokenSelectorModal } from '@/components/swap/TokenSelectorModal';
 import { useSwapData } from '@/components/swap/hooks/useSwapData';
-// import SwapTopPanel from './SwapTopPanel';
+import { useTokenUsdValue } from '@/components/swap/hooks/useTokenUsdValue';
+import { useSwapQuote } from '@/components/swap/hooks/useSwapQuote';
+import {
+  useFromTokenSync,
+  useToTokenSync,
+} from '@/components/swap/hooks/useTokenSync';
+import { useQuoteReceiveSync } from '@/components/swap/hooks/useQuoteReceiveSync';
+import type { SwapQuoteRequestPayload } from '@/lib/quotes.types';
 import { Button } from '@/components/ui/Button';
+import {
+  resolveSwapperAddress,
+  sortTokensByBalance,
+  toSmallestUnit,
+} from '@/components/swap/utils/swapUtils';
+import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
 
 type SelectorTarget = 'from' | 'to' | null;
 
@@ -19,10 +32,12 @@ export function SwapWorkspace() {
   const { primaryWallet, setShowAuthFlow } = useDynamicContext();
   const walletAddress = primaryWallet?.address;
 
-  const [chainId, setChainId] = useState(DEFAULT_CHAIN_ID);
-  const [amount, setAmount] = useState('0.1');
+  const [fromChainId, setFromChainId] = useState(DEFAULT_CHAIN_ID);
+  const [toChainId, setToChainId] = useState(DEFAULT_CHAIN_ID);
+  const [fromAmount, setFromAmount] = useState('0.0');
+  const [toAmount, setToAmount] = useState('0.0');
   const [fromToken, setFromToken] = useState<string>('native');
-  const [toToken, setToToken] = useState<string>('native');
+  const [toToken, setToToken] = useState<string>('');
   const [selectorTarget, setSelectorTarget] = useState<SelectorTarget>(null);
   const [networkMenuOpen, setNetworkMenuOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -31,21 +46,39 @@ export function SwapWorkspace() {
   const [importError, setImportError] = useState<string | null>(null);
 
   const {
-    chainTokens,
-    selectedChainKey,
-    selectedChainIcon,
-    uniqueRuntimeNetworks,
-    loadingDynamicTokens,
-    balances,
-    importTokenByAddress,
+    chainTokens: fromChainTokens,
+    selectedChainKey: fromSelectedChainKey,
+    selectedChainIcon: fromSelectedChainIcon,
+    uniqueRuntimeNetworks: fromRuntimeNetworks,
+    loadingDynamicTokens: fromLoadingDynamicTokens,
+    balances: fromBalances,
+    importTokenByAddress: importFromTokenByAddress,
   } = useSwapData({
-    chainId,
+    chainId: fromChainId,
     staticChains: SUPPORTED_CHAINS,
     walletAddress,
     selectedFromToken: fromToken,
-    selectedToToken: toToken,
-    loadAllTokenBalances: Boolean(selectorTarget),
+    selectedToToken: fromToken,
+    loadAllTokenBalances: selectorTarget === 'from',
   });
+
+  const {
+    chainTokens: toChainTokens,
+    selectedChainKey: toSelectedChainKey,
+    selectedChainIcon: toSelectedChainIcon,
+    uniqueRuntimeNetworks: toRuntimeNetworks,
+    loadingDynamicTokens: toLoadingDynamicTokens,
+    balances: toBalances,
+    importTokenByAddress: importToTokenByAddress,
+  } = useSwapData({
+    chainId: toChainId,
+    staticChains: SUPPORTED_CHAINS,
+    walletAddress,
+    selectedFromToken: toToken || undefined,
+    selectedToToken: toToken || undefined,
+    loadAllTokenBalances: selectorTarget === 'to',
+  });
+
   const {
     mutateAsync: checkTokenRisk,
     data: risk,
@@ -53,86 +86,64 @@ export function SwapWorkspace() {
     isPending: isCheckingRisk,
     reset: resetRiskCheck,
   } = useTokenRiskMutation();
+
   const riskError =
     riskMutationError instanceof Error ? riskMutationError.message : null;
 
-  useEffect(() => {
-    if (chainTokens.length === 0) return;
-
-    const defaultFrom =
-      chainTokens.find((t) => t.address === 'native')?.address ?? chainTokens[0]?.address ?? 'native';
-
-    const hasCurrentFrom = chainTokens.some((t) => t.address === fromToken);
-    const nextFrom = hasCurrentFrom ? fromToken : defaultFrom;
-
-    const hasCurrentTo = chainTokens.some((t) => t.address === toToken);
-    const initialTo =
-      chainTokens.find((t) => t.address !== nextFrom)?.address ?? nextFrom;
-    const nextTo = hasCurrentTo && toToken !== nextFrom ? toToken : initialTo;
-
-    if (nextFrom !== fromToken) setFromToken(nextFrom);
-    if (nextTo !== toToken) setToToken(nextTo);
-  }, [chainTokens, fromToken, toToken]);
+  useFromTokenSync(fromChainTokens, fromToken, setFromToken);
+  useToTokenSync(toChainTokens, toToken, setToToken, resetRiskCheck);
 
   const selectedFromToken = useMemo(
-    () => chainTokens.find((t) => t.address === fromToken),
-    [chainTokens, fromToken]
+    () => fromChainTokens.find((t) => t.address === fromToken),
+    [fromChainTokens, fromToken],
   );
 
   const selectedToToken = useMemo(
-    () => chainTokens.find((t) => t.address === toToken),
-    [chainTokens, toToken]
+    () => toChainTokens.find((t) => t.address === toToken),
+    [toChainTokens, toToken],
   );
 
-  const sortedTokens = useMemo(() => {
-    if (chainTokens.length <= 1) return chainTokens;
+  // Token selector modal context
+  const activeChainTokens =
+    selectorTarget === 'to' ? toChainTokens : fromChainTokens;
+  const activeBalances = selectorTarget === 'to' ? toBalances : fromBalances;
+  const activeLoadingDynamicTokens =
+    selectorTarget === 'to' ? toLoadingDynamicTokens : fromLoadingDynamicTokens;
+  const activeImportTokenByAddress =
+    selectorTarget === 'to' ? importToTokenByAddress : importFromTokenByAddress;
+  const activeChainId = selectorTarget === 'to' ? toChainId : fromChainId;
+  const activeSelectedChainIcon =
+    selectorTarget === 'to' ? toSelectedChainIcon : fromSelectedChainIcon;
+  const activeSelectedChainKey =
+    selectorTarget === 'to' ? toSelectedChainKey : fromSelectedChainKey;
+  const runtimeNetworks =
+    fromRuntimeNetworks.length > 0 ? fromRuntimeNetworks : toRuntimeNetworks;
 
-    const originalIndex = new Map(
-      chainTokens.map((token, index) => [token.address.toLowerCase(), index] as const)
-    );
-
-    const getNumericBalance = (address: string) => {
-      const raw = balances[address.toLowerCase()] ?? '0';
-      const value = Number(raw);
-      return Number.isFinite(value) ? value : 0;
-    };
-
-    return [...chainTokens].sort((left, right) => {
-      const leftBalance = getNumericBalance(left.address);
-      const rightBalance = getNumericBalance(right.address);
-      const leftHasBalance = leftBalance > 0 ? 1 : 0;
-      const rightHasBalance = rightBalance > 0 ? 1 : 0;
-
-      if (leftHasBalance !== rightHasBalance) return rightHasBalance - leftHasBalance;
-      if (leftBalance !== rightBalance) return rightBalance - leftBalance;
-
-      return (
-        (originalIndex.get(left.address.toLowerCase()) ?? 0) -
-        (originalIndex.get(right.address.toLowerCase()) ?? 0)
-      );
-    });
-  }, [chainTokens, balances]);
+  const sortedTokens = useMemo(
+    () => sortTokensByBalance(activeChainTokens, activeBalances),
+    [activeChainTokens, activeBalances],
+  );
 
   const filteredTokens = useMemo(() => {
     const value = deferredQuery.trim().toLowerCase();
     if (!value) return sortedTokens;
-    return sortedTokens.filter((token) => {
-      return (
+    return sortedTokens.filter(
+      (token) =>
         token.symbol.toLowerCase().includes(value) ||
         token.name.toLowerCase().includes(value) ||
-        token.address.toLowerCase().includes(value)
-      );
-    });
+        token.address.toLowerCase().includes(value),
+    );
   }, [deferredQuery, sortedTokens]);
 
-  const chainTokenAddressSet = useMemo(
-    () => new Set(chainTokens.map((token) => token.address.toLowerCase())),
-    [chainTokens],
+  const activeTokenAddressSet = useMemo(
+    () =>
+      new Set(activeChainTokens.map((token) => token.address.toLowerCase())),
+    [activeChainTokens],
   );
+
   const importAddress = query.trim();
-  const normalizedImportAddress = importAddress.toLowerCase();
-  const hasTokenWithImportAddress = chainTokenAddressSet.has(
-    normalizedImportAddress,
+  const hasTokenWithImportAddress = activeTokenAddressSet.has(
+    importAddress.toLowerCase(),
   );
   const canImport = isAddress(importAddress) && !hasTokenWithImportAddress;
   const showImportOption =
@@ -140,16 +151,98 @@ export function SwapWorkspace() {
     filteredTokens.length === 0 &&
     !hasTokenWithImportAddress;
 
+  // Quote
+  const normalizedSwapper = useMemo(
+    () => resolveSwapperAddress(walletAddress),
+    [walletAddress],
+  );
+
+  const quoteAmount = useMemo(
+    () => toSmallestUnit(fromAmount, selectedFromToken?.decimals),
+    [fromAmount, selectedFromToken],
+  );
+
+  const quoteRequest = useMemo<SwapQuoteRequestPayload | null>(() => {
+    if (!selectedFromToken || !selectedToToken || !quoteAmount) return null;
+    return {
+      amount: quoteAmount,
+      swapper: normalizedSwapper,
+      tokenIn: selectedFromToken.address,
+      tokenInChainId: fromChainId,
+      tokenOut: selectedToToken.address,
+      tokenOutChainId: toChainId,
+    };
+  }, [
+    fromChainId,
+    normalizedSwapper,
+    quoteAmount,
+    selectedFromToken,
+    selectedToToken,
+    toChainId,
+  ]);
+
+  const {
+    data: quote,
+    error: quoteError,
+    isFetching: isQuoteFetching,
+  } = useSwapQuote({
+    request: quoteRequest,
+  });
+  const quoteErrorMessage = useMemo(
+    () => getQuoteErrorMessage(quoteError),
+    [quoteError],
+  );
+
+  useQuoteReceiveSync(quote, selectedToToken, setToAmount);
+
+  const { usdValue: fromAmountUsdValue } = useTokenUsdValue({
+    chainId: fromChainId,
+    tokenAddress: selectedFromToken?.address ?? null,
+    amount: fromAmount,
+    refetchIntervalMs: 60_000,
+  });
+
+  const { usdValue: toAmountUsdValue } = useTokenUsdValue({
+    chainId: toChainId,
+    tokenAddress: selectedToToken?.address ?? null,
+    amount: toAmount,
+    refetchIntervalMs: 60_000,
+  });
+
+  const hasTokenSelection = Boolean(selectedFromToken && selectedToToken);
+
+  const onFromAmountChange = useCallback((value: string) => {
+    setFromAmount(value);
+    const isEmpty =
+      value.trim() === '' || value.trim() === '0' || value.trim() === '0.0';
+    if (isEmpty) setToAmount('0.0');
+  }, []);
+
+  const onFlipTokens = useCallback(() => {
+    if (!toToken) return;
+    setFromChainId(toChainId);
+    setToChainId(fromChainId);
+    setFromToken(toToken);
+    setToToken(fromToken);
+    setFromAmount(toAmount);
+    setToAmount('0.0');
+  }, [fromChainId, fromToken, toAmount, toChainId, toToken]);
+
   const onSelectToken = useCallback(
     (address: string) => {
-      if (selectorTarget === 'from') setFromToken(address);
+      if (selectorTarget === 'from') {
+        // Changing the Send token invalidates any previous quote output
+        setFromToken(address);
+        setFromAmount('0.0');
+        setToAmount('0.0');
+      }
       if (selectorTarget === 'to') setToToken(address);
       setSelectorTarget(null);
       setNetworkMenuOpen(false);
       setQuery('');
       setImportError(null);
     },
-    [selectorTarget]
+    [selectorTarget],
   );
 
   const onQueryChange = useCallback((value: string) => {
@@ -162,36 +255,32 @@ export function SwapWorkspace() {
       setImportError('Enter a valid 0x token contract address.');
       return;
     }
-
     setImporting(true);
     setImportError(null);
     try {
       const checksummedAddress = getAddress(importAddress);
-      await importTokenByAddress(checksummedAddress);
+      await activeImportTokenByAddress(checksummedAddress);
       onSelectToken(checksummedAddress);
     } catch (err) {
-      const msg =
+      setImportError(
         err instanceof Error && err.message
           ? err.message
-          : 'Token not found or invalid token address.';
-      setImportError(msg);
+          : 'Token not found or invalid token address.',
+      );
     } finally {
       setImporting(false);
     }
-  }, [importAddress, importTokenByAddress, onSelectToken]);
+  }, [activeImportTokenByAddress, importAddress, onSelectToken]);
 
-  // ─── Review action ───────────────────────────────────────────
   const onReview = useCallback(async () => {
     if (!selectedFromToken || !selectedToToken) return;
     if (selectedToToken.address === 'native') {
       resetRiskCheck();
       return;
     }
-
-
     try {
       await checkTokenRisk({
-        chainId,
+        chainId: toChainId,
         tokenAddress: selectedToToken.address,
       });
     } catch {
@@ -200,20 +289,12 @@ export function SwapWorkspace() {
   }, [
     selectedFromToken,
     selectedToToken,
-    chainId,
+    toChainId,
     checkTokenRisk,
     resetRiskCheck,
   ]);
 
-  const onFlipTokens = useCallback(() => {
-    setFromToken(toToken);
-    setToToken(fromToken);
-  }, [fromToken, toToken]);
-
-  const hasTokenSelection = Boolean(selectedFromToken && selectedToToken);
-
   const onPrimaryAction = useCallback(() => {
-
     if (!primaryWallet) {
       setShowAuthFlow(true);
       return;
@@ -221,71 +302,115 @@ export function SwapWorkspace() {
     void onReview();
   }, [primaryWallet, setShowAuthFlow, onReview]);
 
-  useEffect(() => {
-    resetRiskCheck();
-  }, [chainId, toToken, resetRiskCheck]);
+  const onModalChainSelect = useCallback(
+    (nextChainId: number) => {
+      if (selectorTarget === 'from') setFromChainId(nextChainId);
+      if (selectorTarget === 'to') setToChainId(nextChainId);
+    },
+    [selectorTarget],
+  );
 
   return (
-    <section className="mx-auto max-w-[440px] w-full gap-3 flex flex-col gap-4">
+    <section className='mx-auto max-w-[440px] w-full flex flex-col gap-4'>
       <TokenRiskAlert
         risk={risk ?? null}
         riskError={riskError}
         onClose={resetRiskCheck}
       />
-      {/* <SwapTopPanel /> */}
-      <div className="flex flex-col gap-1">
+
+      <div className='flex flex-col gap-1'>
         <SwapTokenPanel
-          label="Send"
-          amount={amount}
+          label='Send'
+          amount={fromAmount}
           token={selectedFromToken}
-          selectedChainIcon={selectedChainIcon}
-          selectedChainKey={selectedChainKey}
+          usdValue={fromAmountUsdValue}
+          selectedChainIcon={fromSelectedChainIcon}
+          selectedChainKey={fromSelectedChainKey}
           onSelectToken={() => setSelectorTarget('from')}
           editable
-          onAmountChange={setAmount}
+          onAmountChange={onFromAmountChange}
         />
+
         <Button
-          className="-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
+          className='-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]'
           onClick={onFlipTokens}
-          aria-label="Swap tokens"
+          aria-label='Swap tokens'
         >
-          <ArrowDownUp className="text-[var(--arrow-icon-btn)] size-4" />
+          <ArrowDownUp className='text-[var(--arrow-icon-btn)] size-4' />
         </Button>
+
         <SwapTokenPanel
-          label="Receive"
-          amount="0.0"
+          label='Receive'
+          amount={toAmount}
           token={selectedToToken}
-          selectedChainIcon={selectedChainIcon}
-          selectedChainKey={selectedChainKey}
+          usdValue={toAmountUsdValue}
+          selectedChainIcon={toSelectedChainIcon}
+          selectedChainKey={toSelectedChainKey}
           onSelectToken={() => setSelectorTarget('to')}
+          loading={isQuoteFetching && hasTokenSelection && !quoteErrorMessage}
         />
       </div>
+
+      {quoteErrorMessage && (
+        <div
+          role='alert'
+          className='flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm'
+          style={{
+            background: 'var(--no-route-bg, rgba(239,68,68,0.08))',
+            border: '1px solid var(--no-route-border, rgba(239,68,68,0.25))',
+            color: 'var(--no-route-text, #ef4444)',
+          }}
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            viewBox='0 0 20 20'
+            fill='currentColor'
+            className='mt-0.5 size-4 shrink-0'
+            aria-hidden='true'
+          >
+            <path
+              fillRule='evenodd'
+              d='M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z'
+              clipRule='evenodd'
+            />
+          </svg>
+          <span>{quoteErrorMessage}</span>
+        </div>
+      )}
+
       <Button
-        className="rounded-full justify-center w-full border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base"
+        className='rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base'
         onClick={onPrimaryAction}
-        disabled={primaryWallet ? !hasTokenSelection || isCheckingRisk : false}
+        disabled={
+          primaryWallet
+            ? !hasTokenSelection || isCheckingRisk || Boolean(quoteErrorMessage)
+            : false
+        }
       >
         {primaryWallet
           ? isCheckingRisk
             ? 'Checking risk...'
-            : 'Review Swap'
+            : quoteErrorMessage
+              ? 'No Route Available'
+              : 'Review Swap'
           : 'Connect Wallet'}
       </Button>
+
       <TokenSelectorModal
         open={Boolean(selectorTarget)}
         query={query}
         onQueryChange={onQueryChange}
-        chainId={chainId}
-        selectedChainIcon={selectedChainIcon}
-        selectedChainKey={selectedChainKey}
+        chainId={activeChainId}
+        selectedChainIcon={activeSelectedChainIcon}
+        selectedChainKey={activeSelectedChainKey}
         networkMenuOpen={networkMenuOpen}
         setNetworkMenuOpen={setNetworkMenuOpen}
-        networks={uniqueRuntimeNetworks}
-        onChainSelect={setChainId}
+        networks={runtimeNetworks}
+        onChainSelect={onModalChainSelect}
         tokens={filteredTokens}
-        balances={balances}
+        balances={activeBalances}
         onSelectToken={onSelectToken}
-        loadingDynamicTokens={loadingDynamicTokens}
+        loadingDynamicTokens={activeLoadingDynamicTokens}
         showImportOption={showImportOption}
         canImport={canImport}
         importing={importing}
@@ -297,6 +422,6 @@ export function SwapWorkspace() {
           setNetworkMenuOpen(false);
         }}
       />
-    </section >
+    </section>
   );
 }

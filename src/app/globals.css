@@ -46,6 +46,9 @@
   --token-pill-bg: #eef2f8;
   --token-pill-text: #0f172a;
   --token-pill-muted: #5f6778;
+  --token-pill-empty-bg: #f434ba;
+  --token-pill-empty-bg-hover: #e226ab;
+  --token-pill-empty-text: #ffffff;
   --token-icon-bg: #dae3f2;
   --token-icon-text: #0f172a;
   --token-pill-chain-badge-border: #f8fafd;
@@ -149,6 +152,9 @@
     --token-pill-bg: #141414;
     --token-pill-text: #ececec;
     --token-pill-muted: #9ea1ab;
+    --token-pill-empty-bg: #f434ba;
+    --token-pill-empty-bg-hover: #e226ab;
+    --token-pill-empty-text: #ffffff;
     --token-icon-bg: #293246;
     --token-icon-text: #fff;
     --token-pill-chain-badge-border: #0f1013;
@@ -258,6 +264,9 @@
   --token-pill-bg: #141414;
   --token-pill-text: #ececec;
   --token-pill-muted: #9ea1ab;
+  --token-pill-empty-bg: #f434ba;
+  --token-pill-empty-bg-hover: #e226ab;
+  --token-pill-empty-text: #ffffff;
   --token-icon-bg: #293246;
   --token-icon-text: #fff;
   --token-pill-chain-badge-border: #0f1013;

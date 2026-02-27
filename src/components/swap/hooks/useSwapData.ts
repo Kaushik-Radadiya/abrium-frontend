@@ -35,8 +35,10 @@ type Params = {
 const IMPORT_CACHE_KEY = 'abrium.imported.tokens.v1';
 const BALANCE_REFRESH_MS = 30_000;
 const MULTICALL_CHUNK_SIZE = 100;
-const TOKEN_NOT_FOUND_IMPORT_ERROR = 'Token not found or invalid token address.';
-const TOKEN_LOOKUP_UNAVAILABLE_ERROR = 'Token lookup is temporarily unavailable.';
+const TOKEN_NOT_FOUND_IMPORT_ERROR =
+  'Token not found or invalid token address.';
+const TOKEN_LOOKUP_UNAVAILABLE_ERROR =
+  'Token lookup is temporarily unavailable.';
 const EMPTY_TOKENS: UiToken[] = [];
 const EMPTY_RUNTIME_NETWORKS: RuntimeNetwork[] = [];
 const IMPORT_LOOKUP_UNAVAILABLE_PRIORITY_FRAGMENTS = [
@@ -82,10 +84,7 @@ function readImportedTokensCache() {
   return readLocalStorageJson<ImportedState>(IMPORT_CACHE_KEY) ?? {};
 }
 
-function includesAnyFragment(
-  value: string,
-  fragments: readonly string[],
-) {
+function includesAnyFragment(value: string, fragments: readonly string[]) {
   return fragments.some((fragment) => value.includes(fragment));
 }
 
@@ -94,10 +93,7 @@ function normalizeImportTokenError(rawMessage?: string) {
   if (!message) return TOKEN_NOT_FOUND_IMPORT_ERROR;
 
   if (
-    includesAnyFragment(
-      message,
-      IMPORT_LOOKUP_UNAVAILABLE_PRIORITY_FRAGMENTS,
-    )
+    includesAnyFragment(message, IMPORT_LOOKUP_UNAVAILABLE_PRIORITY_FRAGMENTS)
   ) {
     return TOKEN_LOOKUP_UNAVAILABLE_ERROR;
   }
@@ -122,7 +118,9 @@ async function fetchBalancesForTokens(params: {
   const next: Record<string, string> = Object.fromEntries(
     params.tokens.map((token) => [token.address.toLowerCase(), '0.0000']),
   );
-  const nativeTokens = params.tokens.filter((token) => token.address === 'native');
+  const nativeTokens = params.tokens.filter(
+    (token) => token.address === 'native',
+  );
   const erc20Tokens = params.tokens.filter(
     (token): token is UiToken & { address: `0x${string}` } =>
       token.address !== 'native',
@@ -141,7 +139,11 @@ async function fetchBalancesForTokens(params: {
     } catch {}
   }
 
-  for (let offset = 0; offset < erc20Tokens.length; offset += MULTICALL_CHUNK_SIZE) {
+  for (
+    let offset = 0;
+    offset < erc20Tokens.length;
+    offset += MULTICALL_CHUNK_SIZE
+  ) {
     const chunk = erc20Tokens.slice(offset, offset + MULTICALL_CHUNK_SIZE);
 
     try {
@@ -344,13 +346,12 @@ export function useSwapData({
 
       if (!activeRpcUrl) {
         if (!cancelled) {
-          const zeroBalances = trackedBalanceTokens.reduce<Record<string, string>>(
-            (acc, token) => {
-              acc[token.address.toLowerCase()] = '0.0000';
-              return acc;
-            },
-            {},
-          );
+          const zeroBalances = trackedBalanceTokens.reduce<
+            Record<string, string>
+          >((acc, token) => {
+            acc[token.address.toLowerCase()] = '0.0000';
+            return acc;
+          }, {});
           setBalances(zeroBalances);
         }
         return;
