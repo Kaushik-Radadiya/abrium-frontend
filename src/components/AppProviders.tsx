@@ -18,6 +18,7 @@ import {
   polygonAmoy,
   sepolia,
 } from 'wagmi/chains';
+import { AppThemeProvider, useAppTheme } from './AppThemeProvider';
 import { TooltipProvider } from './ui/tooltip';
 
 const dynamicEnvironmentId =
@@ -105,20 +106,27 @@ function DynamicEmbeddedWalletFlowGuard() {
   return null;
 }
 
-export function AppProviders({ children }: PropsWithChildren) {
+function AppProvidersContent({ children }: PropsWithChildren) {
+  const { theme } = useAppTheme();
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <DynamicContextProvider settings={dynamicSettings}>
+    <DynamicContextProvider settings={dynamicSettings} theme={theme}>
       <DynamicEmbeddedWalletFlowGuard />
       <DynamicUserProfile variant="modal" />
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
+          <TooltipProvider>{children}</TooltipProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </DynamicContextProvider>
+  );
+}
+
+export function AppProviders({ children }: PropsWithChildren) {
+  return (
+    <AppThemeProvider>
+      <AppProvidersContent>{children}</AppProvidersContent>
+    </AppThemeProvider>
   );
 }
