@@ -459,7 +459,7 @@ export function SwapWorkspace() {
               ? `~${toAmount || '0.0'} ${selectedToToken.symbol}`
               : undefined
           }
-          onToggleValueDisplay={onToggleToValueMode}
+          onToggleValueDisplay={selectedToToken && onToggleToValueMode}
           loading={isQuoteFetching && shouldShowQuote}
         />
       </div>
