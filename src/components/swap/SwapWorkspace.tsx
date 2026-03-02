@@ -28,6 +28,11 @@ import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
 
 type SelectorTarget = 'from' | 'to' | null;
 
+const TWO_DECIMALS = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 export function SwapWorkspace() {
   const { primaryWallet, setShowAuthFlow } = useDynamicContext();
   const walletAddress = primaryWallet?.address;
@@ -44,6 +49,9 @@ export function SwapWorkspace() {
   const deferredQuery = useDeferredValue(query);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [fromValueMode, setFromValueMode] = useState<'token' | 'usd'>('token');
+  const [fromUsdInput, setFromUsdInput] = useState('');
+  const [toValueMode, setToValueMode] = useState<'token' | 'usd'>('token');
 
   const {
     chainTokens: fromChainTokens,
@@ -102,6 +110,15 @@ export function SwapWorkspace() {
     () => toChainTokens.find((t) => t.address === toToken),
     [toChainTokens, toToken],
   );
+
+  const hasTokenSelection = Boolean(selectedFromToken && selectedToToken);
+
+  const hasBlockingRisk = useMemo(
+    () => risk?.alertLevel === 'error' || risk?.decision === 'BLOCK',
+    [risk],
+  );
+
+  const hasReviewed = useMemo(() => Boolean(risk), [risk]);
 
   // Token selector modal context
   const activeChainTokens =
@@ -163,7 +180,15 @@ export function SwapWorkspace() {
   );
 
   const quoteRequest = useMemo<SwapQuoteRequestPayload | null>(() => {
-    if (!selectedFromToken || !selectedToToken || !quoteAmount) return null;
+    if (
+      !hasReviewed ||
+      !selectedFromToken ||
+      !selectedToToken ||
+      !quoteAmount ||
+      hasBlockingRisk
+    ) {
+      return null;
+    }
     return {
       amount: quoteAmount,
       swapper: normalizedSwapper,
@@ -174,6 +199,8 @@ export function SwapWorkspace() {
     };
   }, [
     fromChainId,
+    hasBlockingRisk,
+    hasReviewed,
     normalizedSwapper,
     quoteAmount,
     selectedFromToken,
@@ -193,13 +220,27 @@ export function SwapWorkspace() {
     [quoteError],
   );
 
-  useQuoteReceiveSync(quote, selectedToToken, setToAmount);
+  const shouldShowQuote =
+    hasTokenSelection && hasReviewed && !quoteErrorMessage && !hasBlockingRisk;
+
+  useQuoteReceiveSync(
+    shouldShowQuote ? quote : null,
+    selectedToToken,
+    setToAmount,
+  );
 
   const { usdValue: fromAmountUsdValue } = useTokenUsdValue({
     chainId: fromChainId,
     tokenAddress: selectedFromToken?.address ?? null,
     amount: fromAmount,
     refetchIntervalMs: 60_000,
+  });
+
+  const { usdValue: fromOneTokenUsd } = useTokenUsdValue({
+    chainId: fromChainId,
+    tokenAddress: selectedFromToken?.address ?? null,
+    amount: '1',
+    refetchIntervalMs: 300_000,
   });
 
   const { usdValue: toAmountUsdValue } = useTokenUsdValue({
@@ -209,13 +250,47 @@ export function SwapWorkspace() {
     refetchIntervalMs: 60_000,
   });
 
-  const hasTokenSelection = Boolean(selectedFromToken && selectedToToken);
-
   const onFromAmountChange = useCallback((value: string) => {
     setFromAmount(value);
     const isEmpty =
       value.trim() === '' || value.trim() === '0' || value.trim() === '0.0';
     if (isEmpty) setToAmount('0.0');
+  }, []);
+
+  const onFromUsdChange = useCallback(
+    (value: string) => {
+      setFromUsdInput(value);
+      const numeric = Number(value);
+      if (!fromOneTokenUsd || fromOneTokenUsd <= 0 || Number.isNaN(numeric)) {
+        setFromAmount('0.0');
+        setToAmount('0.0');
+        return;
+      }
+      const tokenAmount = numeric / fromOneTokenUsd;
+      const normalized = Number.isFinite(tokenAmount)
+        ? tokenAmount.toString()
+        : '0.0';
+      setFromAmount(normalized);
+    },
+    [fromOneTokenUsd],
+  );
+
+  const onToggleFromValueMode = useCallback(() => {
+    setFromValueMode((previous) => {
+      if (previous === 'token') {
+        if (fromAmountUsdValue && Number.isFinite(fromAmountUsdValue)) {
+          setFromUsdInput(String(fromAmountUsdValue));
+        } else {
+          setFromUsdInput('');
+        }
+        return 'usd';
+      }
+      return 'token';
+    });
+  }, [fromAmountUsdValue]);
+
+  const onToggleToValueMode = useCallback(() => {
+    setToValueMode((previous) => (previous === 'token' ? 'usd' : 'token'));
   }, []);
 
   const onFlipTokens = useCallback(() => {
@@ -226,6 +301,9 @@ export function SwapWorkspace() {
     setToToken(fromToken);
     setFromAmount(toAmount);
     setToAmount('0.0');
+    setFromValueMode('token');
+    setFromUsdInput('');
+    setToValueMode('token');
   }, [fromChainId, fromToken, toAmount, toChainId, toToken]);
 
   const onSelectToken = useCallback(
@@ -236,7 +314,17 @@ export function SwapWorkspace() {
         setFromAmount('0.0');
         setToAmount('0.0');
       }
-      if (selectorTarget === 'to') setToToken(address);
+      if (selectorTarget === 'to') {
+        setToToken(address);
+        setToAmount('0.0');
+      }
+      if (selectorTarget === 'from') {
+        setFromValueMode('token');
+        setFromUsdInput('');
+      }
+      if (selectorTarget === 'to') {
+        setToValueMode('token');
+      }
       setSelectorTarget(null);
       setNetworkMenuOpen(false);
       setQuery('');
@@ -299,8 +387,15 @@ export function SwapWorkspace() {
       setShowAuthFlow(true);
       return;
     }
+    if (!selectedFromToken || !selectedToToken) return;
     void onReview();
-  }, [primaryWallet, setShowAuthFlow, onReview]);
+  }, [
+    onReview,
+    primaryWallet,
+    selectedFromToken,
+    selectedToToken,
+    setShowAuthFlow,
+  ]);
 
   const onModalChainSelect = useCallback(
     (nextChainId: number) => {
@@ -311,50 +406,68 @@ export function SwapWorkspace() {
   );
 
   return (
-    <section className='mx-auto min-w-[440px] max-w-max w-full flex flex-col gap-4'>
+    <section className="mx-auto min-w-[440px] max-w-max w-full flex flex-col gap-4">
       <TokenRiskAlert
         risk={risk ?? null}
         riskError={riskError}
         onClose={resetRiskCheck}
       />
 
-      <div className='flex flex-col gap-1'>
+      <div className="flex flex-col gap-1">
         <SwapTokenPanel
-          label='Send'
-          amount={fromAmount}
+          label="Send"
+          amount={fromValueMode === 'token' ? fromAmount : fromUsdInput}
           token={selectedFromToken}
           usdValue={fromAmountUsdValue}
           selectedChainIcon={fromSelectedChainIcon}
           selectedChainKey={fromSelectedChainKey}
           onSelectToken={() => setSelectorTarget('from')}
           editable
-          onAmountChange={onFromAmountChange}
+          onAmountChange={
+            fromValueMode === 'token' ? onFromAmountChange : onFromUsdChange
+          }
+          bottomLabel={
+            fromValueMode === 'usd' && selectedFromToken
+              ? `~${fromAmount || '0.0'} ${selectedFromToken.symbol}`
+              : undefined
+          }
+          onToggleValueDisplay={onToggleFromValueMode}
         />
 
         <Button
-          className='-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]'
+          className="-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
           onClick={onFlipTokens}
-          aria-label='Swap tokens'
+          aria-label="Swap tokens"
         >
-          <ArrowDownUp className='text-[var(--arrow-icon-btn)] size-4' />
+          <ArrowDownUp className="text-[var(--arrow-icon-btn)] size-4" />
         </Button>
 
         <SwapTokenPanel
-          label='Receive'
-          amount={toAmount}
+          label="Receive"
+          amount={
+            toValueMode === 'usd'
+              ? TWO_DECIMALS.format(toAmountUsdValue ?? 0)
+              : toAmount
+          }
           token={selectedToToken}
-          usdValue={toAmountUsdValue}
+          usdValue={toValueMode === 'token' ? toAmountUsdValue : 0}
           selectedChainIcon={toSelectedChainIcon}
           selectedChainKey={toSelectedChainKey}
           onSelectToken={() => setSelectorTarget('to')}
-          loading={isQuoteFetching && hasTokenSelection && !quoteErrorMessage}
+          bottomLabel={
+            toValueMode === 'usd' && selectedToToken
+              ? `~${toAmount || '0.0'} ${selectedToToken.symbol}`
+              : undefined
+          }
+          onToggleValueDisplay={onToggleToValueMode}
+          loading={isQuoteFetching && shouldShowQuote}
         />
       </div>
 
       {quoteErrorMessage && (
         <div
-          role='alert'
-          className='flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm'
+          role="alert"
+          className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm"
           style={{
             background: 'var(--no-route-bg, rgba(239,68,68,0.08))',
             border: '1px solid var(--no-route-border, rgba(239,68,68,0.25))',
@@ -362,16 +475,16 @@ export function SwapWorkspace() {
           }}
         >
           <svg
-            xmlns='http://www.w3.org/2000/svg'
-            viewBox='0 0 20 20'
-            fill='currentColor'
-            className='mt-0.5 size-4 shrink-0'
-            aria-hidden='true'
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="mt-0.5 size-4 shrink-0"
+            aria-hidden="true"
           >
             <path
-              fillRule='evenodd'
-              d='M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z'
-              clipRule='evenodd'
+              fillRule="evenodd"
+              d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+              clipRule="evenodd"
             />
           </svg>
           <span>{quoteErrorMessage}</span>
@@ -379,7 +492,7 @@ export function SwapWorkspace() {
       )}
 
       <Button
-        className='rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base'
+        className="rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base"
         onClick={onPrimaryAction}
         disabled={
           primaryWallet
