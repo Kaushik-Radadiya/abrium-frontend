@@ -67,6 +67,50 @@ const COINGECKO_PLATFORM_BY_CHAIN_ID: Record<number, string> = {
   8453: 'base',
 };
 
+const GECKOTERMINAL_NETWORK_BY_CHAIN_ID: Record<number, string> = {
+  1: 'eth',
+  137: 'polygon_pos',
+  8453: 'base',
+  10: 'optimism',
+  42161: 'arbitrum',
+  56: 'bsc',
+  43114: 'avax',
+  11155111: 'eth_sepolia',
+  80002: 'polygon_pos_amoy',
+  84532: 'base_sepolia',
+};
+
+export async function fetchCoinGeckoTokenImageUrl({
+  chainId,
+  address,
+}: {
+  chainId: number;
+  address: string;
+}): Promise<string | null> {
+  if (address === 'native') return null;
+
+  const network = GECKOTERMINAL_NETWORK_BY_CHAIN_ID[chainId];
+  if (!network) return null;
+
+  try {
+    const url = `https://api.geckoterminal.com/api/v2/networks/${network}/tokens/${address.toLowerCase()}`;
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json;version=20230302' },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return null;
+
+    const json = (await response.json()) as {
+      data?: { attributes?: { image_url?: string | null } };
+    };
+
+    return json.data?.attributes?.image_url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const COINGECKO_NATIVE_COIN_IDS_BY_CHAIN_ID: Record<number, string[]> = {
   1: ['ethereum'],
   137: ['polygon-ecosystem-token', 'matic-network'],

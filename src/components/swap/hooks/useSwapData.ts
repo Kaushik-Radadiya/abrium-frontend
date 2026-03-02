@@ -11,7 +11,11 @@ import {
 } from 'viem';
 import { SupportedChain, getChainKey } from '@/lib/chains';
 import { listTokensForChain, UiToken } from '@/lib/tokens';
-import { fetchCatalogChains, fetchCatalogTokens } from '@/lib/api.requests';
+import {
+  fetchCatalogChains,
+  fetchCatalogTokens,
+  fetchCoinGeckoTokenImageUrl,
+} from '@/lib/api.requests';
 import { getChainIconUrl } from '@/lib/icons';
 import { dedupeTokens } from '@/components/swap/utils';
 
@@ -413,6 +417,7 @@ export function useSwapData({
       let name: string | undefined;
       let decimals: number | undefined;
       let lastError: unknown;
+      const logoPromise = fetchCoinGeckoTokenImageUrl({ chainId, address });
 
       for (const rpcUrl of orderedRpcUrls) {
         try {
@@ -452,12 +457,15 @@ export function useSwapData({
         );
       }
 
+      const logoURI = await logoPromise.catch(() => null);
+
       const importedToken: UiToken = {
         chainId,
         address,
         symbol,
         name,
         decimals,
+        ...(logoURI ? { logoURI } : {}),
       };
 
       setImportedByChain((prev) => {

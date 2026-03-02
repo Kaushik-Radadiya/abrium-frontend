@@ -54,7 +54,7 @@ type Props = {
 
 const MUTED_CLASS = 'text-xs uppercase text-[var(--neutral-text-textWeak)]';
 const TOKEN_ICON_CLASS =
-  'relative grid max-h-8 max-w-8 w-full h-full place-items-center overflow-visible rounded-full border-0 bg-[var(--token-icon-bg)] text-xs font-bold text-[var(--token-icon-text)]';
+  'relative grid h-8 w-8 place-items-center overflow-visible rounded-full border-0 bg-[var(--token-icon-bg)] text-xs font-bold text-[var(--token-icon-text)]';
 const TOKENS_PAGE_SIZE = 200;
 
 function resolveChainKey(chainId: number, chainKey?: string) {
@@ -106,13 +106,13 @@ export function TokenSelectorModal({
     () =>
       visibleTokens.map((token) => (
         <Button
-          size="none"
-          variant="ghost"
+          size='none'
+          variant='ghost'
           key={`list-${token.address}`}
-          className="flex min-h-14 w-full items-center justify-between rounded-xl border px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]"
+          className='flex min-h-14 w-full items-center justify-between rounded-xl border px-2 py-1.5 text-left text-[var(--token-row-text)] hover:bg-[var(--neutral-background-raised-hover)]'
           onClick={() => onSelectToken(token.address)}
         >
-          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <div className='flex min-w-0 flex-1 items-center gap-2.5'>
             <span className={TOKEN_ICON_CLASS}>
               <IconWithFallback
                 src={token.logoURI ?? getTokenIconUrl(token.symbol)}
@@ -120,25 +120,25 @@ export function TokenSelectorModal({
                 fallback={token.symbol[0]}
               />
               {selectedChainIcon ? (
-                <span className="absolute bottom-0 right-0 grid h-4 w-4 place-items-center overflow-hidden rounded-full border-2 border-[var(--chain-badge-border)] bg-[var(--chain-badge-bg)]">
+                <span className='absolute bottom-0 right-0 grid h-4 w-4 place-items-center overflow-hidden rounded-full border-2 border-[var(--chain-badge-border)] bg-[var(--chain-badge-bg)]'>
                   <IconWithFallback
                     src={selectedChainIcon}
                     alt={selectedChainKey}
-                    fallback=""
+                    fallback=''
                     showFallback={false}
-                    sizes="16px"
+                    sizes='16px'
                   />
                 </span>
               ) : null}
             </span>
-            <div className="min-w-0 flex flex-col gap-1">
-              <div className="truncate text-base font-medium text-[var(--neutral-text)]">
+            <div className='min-w-0 flex flex-col gap-1'>
+              <div className='truncate text-base font-medium text-[var(--neutral-text)]'>
                 {token.symbol}
               </div>
               <div className={`${MUTED_CLASS} flex min-w-0 items-center gap-1`}>
-                <span className="truncate">{token.name}</span>
+                <span className='truncate'>{token.name}</span>
                 {token.address === 'native' ? null : (
-                  <span className="shrink-0">
+                  <span className='shrink-0'>
                     {shortAddress(token.address)}
                   </span>
                 )}
@@ -184,64 +184,64 @@ export function TokenSelectorModal({
     >
       <DialogContent
         showCloseButton={true}
-        className="flex flex-col h-[min(700px,85vh)] w-full gap-2 max-w-[430px] overflow-hidden rounded-[18px] border border-[var(--swap-token-border)] bg-[var(--neutral-background-raised)] text-[var(--modal-text)]"
+        className='flex flex-col h-[min(700px,85vh)] w-full gap-2 max-w-[430px] overflow-hidden rounded-[18px] border border-[var(--swap-token-border)] bg-[var(--neutral-background-raised)] text-[var(--modal-text)]'
         onClick={(event) => event.stopPropagation()}
       >
         <DialogHeader>
-          <DialogTitle className="text-base font-normal">
+          <DialogTitle className='text-base font-normal'>
             Select a token
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mx-[14px] flex py-1 px-3 items-center gap-2.5 rounded-full border border-[var(--search-row-border)] bg-[var(--search-row-bg)]">
-          <span className="text-lg leading-none opacity-70" aria-hidden="true">
-            <SearchIcon className="text-[var(--arrow-icon-btn)] size-5" />
+        <div className='mx-[14px] flex py-1 px-3 items-center gap-2.5 rounded-full border border-[var(--search-row-border)] bg-[var(--search-row-bg)]'>
+          <span className='text-lg leading-none opacity-70' aria-hidden='true'>
+            <SearchIcon className='text-[var(--arrow-icon-btn)] size-5' />
           </span>
           <input
-            className="min-h-0 flex-1 border-0 bg-transparent p-0 text-base text-[var(--neutral-text-textWeek)] outline-none placeholder:text-[var(--neutral-text-placeholder)]"
+            className='min-h-0 flex-1 border-0 bg-transparent p-0 text-base text-[var(--neutral-text-textWeek)] outline-none placeholder:text-[var(--neutral-text-placeholder)]'
             value={query}
             onChange={(event) => {
               setVisibleCount(TOKENS_PAGE_SIZE);
               onQueryChange(event.target.value);
             }}
-            placeholder="Search tokens or paste address"
+            placeholder='Search tokens or paste address'
           />
-          <div className="relative ml-auto flex justify-center">
+          <div className='relative ml-auto flex justify-center'>
             <DropdownMenu
               open={networkMenuOpen}
               onOpenChange={setNetworkMenuOpen}
             >
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
-                  size="none"
-                  type="button"
-                  className="inline-flex min-h-[34px] min-w-[54px] items-center justify-end gap-2 rounded-[10px] border-0 bg-transparent p-0 text-[var(--search-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--network-item-active-border)]"
+                  variant='ghost'
+                  size='none'
+                  type='button'
+                  className='inline-flex min-h-[34px] min-w-[54px] items-center justify-end gap-2 rounded-[10px] border-0 bg-transparent p-0 text-[var(--search-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--network-item-active-border)]'
                 >
-                  <span className="inline-flex items-center">
+                  <span className='inline-flex items-center'>
                     {currentChainIcon ? (
-                      <span className="relative size-4 overflow-hidden rounded-full border-0">
+                      <span className='relative size-4 overflow-hidden rounded-full border-0'>
                         <IconWithFallback
                           src={currentChainIcon}
                           alt={currentChainKey}
                           fallback={currentChainKey[0]?.toUpperCase() ?? 'N'}
-                          sizes="30px"
+                          sizes='30px'
                         />
                       </span>
                     ) : null}
                   </span>
-                  <span className="text-sm leading-none text-[var(--network-chevron)]">
+                  <span className='text-sm leading-none text-[var(--network-chevron)]'>
                     {networkMenuOpen ? (
-                      <ChevronUpIcon className="text-[var(--arrow-icon-btn)] size-4" />
+                      <ChevronUpIcon className='text-[var(--arrow-icon-btn)] size-4' />
                     ) : (
-                      <ChevronDownIcon className="text-[var(--arrow-icon-btn)] size-4" />
+                      <ChevronDownIcon className='text-[var(--arrow-icon-btn)] size-4' />
                     )}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                align="end"
-                className="thin-scrollbar z-[60] grid max-h-[min(62vh,420px)] w-[220px] gap-0.5 overflow-y-auto rounded-xl border border-[var(--neutral-border)] bg-[var(--neutral-background)] p-1.5"
+                align='end'
+                className='thin-scrollbar z-[60] grid max-h-[min(62vh,420px)] w-[220px] gap-0.5 overflow-y-auto rounded-xl border border-[var(--neutral-border)] bg-[var(--neutral-background)] p-1.5'
               >
                 {networks.map((network) => (
                   <DropdownMenuItem
@@ -257,8 +257,8 @@ export function TokenSelectorModal({
                       setNetworkMenuOpen(false);
                     }}
                   >
-                    <span className="inline-flex items-center gap-2">
-                      <span className="relative size-5 overflow-hidden rounded-full border-0">
+                    <span className='inline-flex items-center gap-2'>
+                      <span className='relative size-5 overflow-hidden rounded-full border-0'>
                         <IconWithFallback
                           src={
                             network.logoURI ??
@@ -271,7 +271,7 @@ export function TokenSelectorModal({
                           }
                           alt={network.chain.name}
                           fallback={network.chain.name[0] ?? 'N'}
-                          sizes="30px"
+                          sizes='30px'
                         />
                       </span>
                       {network.chain.name}
@@ -284,7 +284,7 @@ export function TokenSelectorModal({
         </div>
 
         <div
-          className="thin-scrollbar min-h-0 gap-1 overflow-auto px-2 pb-2.5 pt-1 me-1"
+          className='thin-scrollbar min-h-0 gap-1 overflow-auto px-2 pb-2.5 pt-1 me-1'
           onScroll={onTokenListScroll}
         >
           {loadingDynamicTokens && tokens.length === 0 ? (
@@ -292,16 +292,16 @@ export function TokenSelectorModal({
               {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={`skeleton-${index}`}
-                  className="pointer-events-none flex min-h-14 items-center justify-between rounded-xl border border-transparent bg-transparent px-2 py-1.5"
+                  className='pointer-events-none flex min-h-14 items-center justify-between rounded-xl border border-transparent bg-transparent px-2 py-1.5'
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="h-8 w-8 rounded-full border border-[var(--skeleton-border)] bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse" />
-                    <div className="grid gap-1.5">
-                      <span className="inline-block h-2.5 w-[170px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse" />
-                      <span className="inline-block h-2.5 w-[110px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse" />
+                  <div className='flex items-center gap-2.5'>
+                    <span className='h-8 w-8 rounded-full border border-[var(--skeleton-border)] bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                    <div className='grid gap-1.5'>
+                      <span className='inline-block h-2.5 w-[170px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
+                      <span className='inline-block h-2.5 w-[110px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
                     </div>
                   </div>
-                  <span className="inline-block h-2.5 w-[42px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse" />
+                  <span className='inline-block h-2.5 w-[42px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse' />
                 </div>
               ))}
             </>
@@ -311,10 +311,10 @@ export function TokenSelectorModal({
 
           {canLoadMoreTokens ? (
             <Button
-              variant="ghost"
-              size="none"
-              type="button"
-              className="mx-2 justify-between mt-1 rounded-lg border border-[var(--neutral-border)] px-3 py-2 text-left text-xs uppercase text-[var(--neutral-text-textWeak)] hover:bg-[var(--neutral-background-raised-hover)]"
+              variant='ghost'
+              size='none'
+              type='button'
+              className='mx-2 justify-between mt-1 rounded-lg border border-[var(--neutral-border)] px-3 py-2 text-left text-xs uppercase text-[var(--neutral-text-textWeak)] hover:bg-[var(--neutral-background-raised-hover)]'
               onClick={() =>
                 setVisibleCount((current) =>
                   Math.min(current + TOKENS_PAGE_SIZE, tokens.length),
@@ -328,9 +328,9 @@ export function TokenSelectorModal({
 
           {showImportOption ? (
             <Button
-              variant="ghost"
-              size="none"
-              type="button"
+              variant='ghost'
+              size='none'
+              type='button'
               className={`flex min-h-14 w-full items-center justify-between rounded-xl border-2 px-2 py-1.5 text-left text-[var(--token-row-text)] ${
                 importError
                   ? 'border-[var(--alert-error-border)] bg-[var(--alert-error-bg)]'
@@ -357,7 +357,7 @@ export function TokenSelectorModal({
           ) : null}
 
           {importError ? (
-            <p className="px-1 pt-1 text-xs font-medium uppercase tracking-[0.02em] text-[var(--alert-error-text)]">
+            <p className='px-1 pt-1 text-xs font-medium uppercase tracking-[0.02em] text-[var(--alert-error-text)]'>
               {importError}
             </p>
           ) : null}
