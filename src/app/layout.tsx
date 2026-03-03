@@ -51,7 +51,7 @@ export default function RootLayout({
                 <WalletConnectCard />
               </div>
             </header>
-            <div className="overflow-auto">{children}</div>
+            <div className="overflow-auto h-[calc(100vh-65px)]">{children}</div>
           </div>
         </AppProviders>
       </body>

@@ -416,7 +416,7 @@ export function SwapWorkspace() {
   const isSelectorOpen = Boolean(selectorTarget);
 
   return (
-    <section className="mx-auto min-[1440px]:min-w-110 xl:max-w-95 min-[1440px]:max-w-max sm:max-w-90 w-full relative min-h-125 overflow-hidden">
+    <section className="relative h-full">
       <AnimatePresence initial={false}>
         {!isSelectorOpen ? (
           <motion.div
@@ -425,7 +425,7 @@ export function SwapWorkspace() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute inset-0 flex flex-col gap-4"
+            className="absolute inset-0 flex flex-col gap-4 mx-auto min-[1440px]:min-w-110 xl:max-w-95 min-[1440px]:max-w-max sm:max-w-90 w-full"
           >
             <TokenRiskAlert
               risk={risk ?? null}

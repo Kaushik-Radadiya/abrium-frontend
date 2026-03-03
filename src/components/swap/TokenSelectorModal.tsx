@@ -177,15 +177,14 @@ export function TokenSelectorModal({
   if (!open) return null;
 
   return (
-    <div className="relative h-full w-full pl-8">
+    <div className="flex relative h-full items-start w-full min-h-0  pl-7 mx-auto min-[1440px]:min-w-117 xl:max-w-110 min-[1440px]:max-w-max sm:max-w-90">
       <button
         onClick={onClose}
-        className="absolute left-0 top-1 z-10 rounded-full bg-[var(--neutral-background-raised-hover)] p-1"
+        className="z-10 absolute top-1 -left-3 rounded-full bg-[var(--neutral-background-raised-hover)] p-1"
       >
         <ChevronLeftIcon className="size-5 opacity-70" />
       </button>
-
-      <div className="flex h-[calc(100%-1rem)] w-[calc(100%-1rem)] min-h-0 flex-col rounded-2xl border border-[var(--neutral-border)] bg-[var(--neutral-background)] text-[var(--neutral-text)]">
+      <div className="border w-full border-[var(--neutral-border)] rounded-2xl bg-[var(--neutral-background)] text-[var(--neutral-text)]">
         {/* Header */}
         <div className="flex items-center gap-3 p-4">
           <div className="w-full flex py-1 px-3 items-center gap-2.5 rounded-full border border-[var(--search-row-border)] bg-[var(--search-row-bg)]">
@@ -283,7 +282,7 @@ export function TokenSelectorModal({
         </div>
 
         <div
-          className="thin-scrollbar me-1 flex-1 min-h-0 gap-1 overflow-auto px-2 pb-2.5 pt-1"
+          className="thin-scrollbar me-1 flex-1 max-h-128 h-full gap-1 overflow-auto px-2 pb-2.5 pt-1"
           onScroll={onTokenListScroll}
         >
           {loadingDynamicTokens && tokens.length === 0 ? (
@@ -296,7 +295,7 @@ export function TokenSelectorModal({
                   <div className="flex items-center gap-2.5">
                     <span className="h-8 w-8 rounded-full border border-[var(--skeleton-border)] bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse" />
                     <div className="grid gap-1.5">
-                      <span className="inline-block h-2.5 w-[170px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse" />
+                      <span className="inline-block h-2.5 w-42.5 rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse" />
                       <span className="inline-block h-2.5 w-[110px] rounded-full bg-[linear-gradient(90deg,var(--shimmer-a)_25%,var(--shimmer-b)_37%,var(--shimmer-c)_63%)] bg-[length:300%_100%] animate-pulse" />
                     </div>
                   </div>
