@@ -1,18 +1,26 @@
 'use client';
-import Image from 'next/image';
 import Link from 'next/link';
 import { NAV_ITEMS } from '@/lib/constant/sidebar-menu';
 import { FileText } from 'lucide-react';
-
+import { ShimmerImage } from '@/components/ui/ShimmerImage';
 
 export function Sidebar() {
-
   return (
-    <aside className='flex h-screen min-w-[302px] flex-col justify-between border-r border-(--border) p-4 text-(--text) bg-(--panel)'>
+    <aside className="flex h-screen min-w-[302px] flex-col justify-between border-r border-(--border) p-4 text-(--text) bg-(--panel)">
       <div>
         <div className="mb-4">
           <div className="flex items-center gap-3">
-            <Image src="/assets/Logo.svg" alt="Logo" width={32} height={32} />
+            <ShimmerImage
+              src="/assets/Logo.svg"
+              alt="Logo"
+              fallback="A"
+              sizes="32px"
+              width={32}
+              height={32}
+              priority
+              containerClassName="shrink-0 rounded-md"
+              imageClassName="object-contain"
+            />
             <span className="text-[32px] font-mono tracking-wide text-(--text)">
               Abrium
             </span>
@@ -26,10 +34,11 @@ export function Sidebar() {
                 <li key={label}>
                   <Link
                     href={href}
-                    className={`flex items-center gap-3 rounded-xl p-3 text-base leading-[16px] font-normal transition-colors border ${isActive
-                      ? 'bg-(--neutral-background) border-(--neutral-border) text-(--text)'
-                      : 'border-transparent text-(--neutral-text-textWeak) hover:bg-(--neutral-background-hover) hover:text-(--text)'
-                      }`}
+                    className={`flex items-center gap-3 rounded-xl p-3 text-base leading-[16px] font-normal transition-colors border ${
+                      isActive
+                        ? 'bg-(--neutral-background) border-(--neutral-border) text-(--text)'
+                        : 'border-transparent text-(--neutral-text-textWeak) hover:bg-(--neutral-background-hover) hover:text-(--text)'
+                    }`}
                   >
                     <Icon size={16} />
                     {label}

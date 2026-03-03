@@ -6,15 +6,20 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { getChainKey } from '@/lib/chains';
 import { getChainIconUrl } from '@/lib/icons';
 import { Button } from '@/components/ui/Button';
+import { ShimmerImage } from '@/components/ui/ShimmerImage';
+import { showAddress } from '@/lib/utils';
 
 export function WalletConnectCard() {
-  const { primaryWallet, setShowAuthFlow, setShowDynamicUserProfile } =
+  const { primaryWallet, setShowAuthFlow, setShowDynamicUserProfile, network } =
     useDynamicContext();
   const address = primaryWallet?.address;
-  const chainId = (primaryWallet as any)?.connector?.activeChain?.id;
-  const shortAddress = useMemo(() => {
+  const chainId = useMemo(() => {
+    const parsed = typeof network === 'number' ? network : Number(network);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [network]);
+  const shortWalletAddress = useMemo(() => {
     if (!address) return 'Connect Wallet';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    return showAddress(address);
   }, [address]);
 
   const chainIcon = useMemo(() => {
@@ -29,25 +34,24 @@ export function WalletConnectCard() {
       onClick={() =>
         primaryWallet ? setShowDynamicUserProfile(true) : setShowAuthFlow(true)
       }
-      className={`!text-sm items-center justify-center ${address ? "" : "!bg-[var(--neutral-background-strong)]"}`}
+      className={`!text-sm items-center justify-center ${address ? '' : '!bg-[var(--neutral-background-strong)]'}`}
     >
-      {/* {primaryWallet?.connector?.metadata?.icon ? (
-        <img
-          src={primaryWallet.connector.metadata.icon}
-          alt={primaryWallet.connector.name || 'Wallet'}
-          className="h-4 w-4"
-        />
-      ) : null} */}
-
       {chainIcon ? (
-        <img
+        <ShimmerImage
           src={chainIcon}
           alt="Chain"
-          className="h-4 w-4 rounded-full"
+          fallback="C"
+          sizes="16px"
+          containerClassName="h-4 w-4 rounded-full bg-[var(--neutral-background-raised-hover)]"
+          imageClassName="object-cover"
         />
       ) : null}
 
-      <span className={`text-sm font-medium ${address ? "text-[var(--neutral-text-textStrong)] font-mono" : "text-[var(--neutral-background)]"}`}>{shortAddress}</span>
+      <span
+        className={`text-sm font-medium ${address ? 'text-[var(--neutral-text-textStrong)] font-mono' : 'text-[var(--neutral-background)]'}`}
+      >
+        {shortWalletAddress}
+      </span>
       {address ? <ChevronDown size={14} className="opacity-60" /> : null}
     </Button>
   );

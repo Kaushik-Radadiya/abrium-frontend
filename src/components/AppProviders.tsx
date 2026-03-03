@@ -2,13 +2,30 @@
 
 import { PropsWithChildren, useCallback, useState } from 'react';
 import {
+  SdkViewType,
+  SdkViewSectionType,
+  type SdkView,
+} from '@dynamic-labs/sdk-api-core';
+import {
   DynamicContextProvider,
   DynamicUserProfile,
+  FilterChain,
   overrideNetworkRpcUrl,
   useDynamicContext,
   useDynamicEvents,
 } from '@dynamic-labs/sdk-react-core';
+import {
+  BitcoinIcon,
+  EthereumIcon,
+  FlowIcon,
+  SolanaIcon,
+} from '@dynamic-labs/iconic';
+import { BitcoinWalletConnectors } from '@dynamic-labs/bitcoin';
 import { EthereumWalletConnectors } from '@dynamic-labs/ethereum';
+import { FlowWalletConnectors } from '@dynamic-labs/flow';
+import { SolanaWalletConnectors } from '@dynamic-labs/solana';
+import { DynamicWaasEVMConnectors } from '@dynamic-labs/waas-evm';
+import { DynamicWaasSVMConnectors } from '@dynamic-labs/waas-svm';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import {
@@ -83,14 +100,87 @@ const applyDynamicRpcOverrides = (
   dashboardNetworks: Parameters<typeof overrideNetworkRpcUrl>[0],
 ) => overrideNetworkRpcUrl(dashboardNetworks, dynamicRpcOverrides);
 
+const walletListViewTabs = [
+  {
+    label: {
+      text: 'All chains',
+      key: 'all-chains',
+    },
+  },
+  {
+    label: {
+      icon: <EthereumIcon />,
+      key: 'evm',
+    },
+    walletsFilter: FilterChain('EVM'),
+  },
+  {
+    label: {
+      icon: <SolanaIcon />,
+      key: 'solana',
+    },
+    walletsFilter: FilterChain('SOL'),
+  },
+  {
+    label: {
+      icon: <BitcoinIcon />,
+      key: 'bitcoin',
+    },
+    walletsFilter: FilterChain('BTC'),
+  },
+  {
+    label: {
+      icon: <FlowIcon />,
+      key: 'flow',
+    },
+    walletsFilter: FilterChain('FLOW'),
+  },
+];
+
+const loginWalletOnlyView: SdkView = {
+  type: SdkViewType.Login,
+  sections: [
+    {
+      type: SdkViewSectionType.Wallet,
+    },
+    {
+      type: SdkViewSectionType.Separator,
+      label: 'OR',
+    },
+    {
+      type: SdkViewSectionType.Social,
+    },
+    {
+      type: SdkViewSectionType.Email,
+    },
+  ],
+};
+
 const dynamicSettings = {
   environmentId: dynamicEnvironmentId,
   social: { strategy: 'popup' as const },
-  walletConnectors: [EthereumWalletConnectors],
+  walletConnectors: [
+    EthereumWalletConnectors,
+    SolanaWalletConnectors,
+    BitcoinWalletConnectors,
+    FlowWalletConnectors,
+    DynamicWaasEVMConnectors,
+    DynamicWaasSVMConnectors,
+  ],
   useMetamaskSdk: false,
   localStorageSuffix: 'abrium-dynamic-v4',
   overrides: {
     evmNetworks: applyDynamicRpcOverrides,
+    views: [
+      loginWalletOnlyView,
+      {
+        type: 'wallet-list' as const,
+        tabs: {
+          style: 'grid' as const,
+          items: walletListViewTabs,
+        },
+      },
+    ],
   },
 };
 
@@ -113,7 +203,7 @@ function AppProvidersContent({ children }: PropsWithChildren) {
   return (
     <DynamicContextProvider settings={dynamicSettings} theme={theme}>
       <DynamicEmbeddedWalletFlowGuard />
-      <DynamicUserProfile variant="modal" />
+      <DynamicUserProfile variant='modal' />
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>{children}</TooltipProvider>

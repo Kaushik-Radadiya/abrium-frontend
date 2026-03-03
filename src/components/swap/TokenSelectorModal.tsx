@@ -16,9 +16,10 @@ import {
 
 import { SupportedChain } from '@/lib/chains';
 import { UiToken } from '@/lib/tokens';
+import { showAddress } from '@/lib/utils';
 import { getChainIconUrl, getTokenIconUrl } from '@/lib/icons';
 import { IconWithFallback } from '@/components/swap/IconWithFallback';
-import { displayBalance, shortAddress } from '@/components/swap/utils';
+import { displayBalance } from '@/components/swap/utils';
 import { ChevronDownIcon, ChevronUpIcon, SearchIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -139,7 +140,7 @@ export function TokenSelectorModal({
                 <span className='truncate'>{token.name}</span>
                 {token.address === 'native' ? null : (
                   <span className='shrink-0'>
-                    {shortAddress(token.address)}
+                    {showAddress(token.address)}
                   </span>
                 )}
               </div>
@@ -349,7 +350,7 @@ export function TokenSelectorModal({
                 </div>
                 <div className={MUTED_CLASS}>
                   {canImport
-                    ? shortAddress(importAddress)
+                    ? showAddress(importAddress)
                     : 'Only EVM token addresses are supported'}
                 </div>
               </div>
