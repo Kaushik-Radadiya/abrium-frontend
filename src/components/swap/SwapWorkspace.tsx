@@ -25,6 +25,7 @@ import {
   toSmallestUnit,
 } from '@/components/swap/utils/swapUtils';
 import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type SelectorTarget = 'from' | 'to' | null;
 
@@ -405,136 +406,172 @@ export function SwapWorkspace() {
     [selectorTarget],
   );
 
+  const openSelector = useCallback((target: Exclude<SelectorTarget, null>) => {
+    setQuery('');
+    setImportError(null);
+    setNetworkMenuOpen(false);
+    setSelectorTarget(target);
+  }, []);
+
+  const isSelectorOpen = Boolean(selectorTarget);
+
   return (
-    <section className="mx-auto min-w-[440px] max-w-max w-full flex flex-col gap-4">
-      <TokenRiskAlert
-        risk={risk ?? null}
-        riskError={riskError}
-        onClose={resetRiskCheck}
-      />
-
-      <div className="flex flex-col gap-1">
-        <SwapTokenPanel
-          label="Send"
-          amount={fromValueMode === 'token' ? fromAmount : fromUsdInput}
-          token={selectedFromToken}
-          usdValue={fromAmountUsdValue}
-          selectedChainIcon={fromSelectedChainIcon}
-          selectedChainKey={fromSelectedChainKey}
-          onSelectToken={() => setSelectorTarget('from')}
-          editable
-          onAmountChange={
-            fromValueMode === 'token' ? onFromAmountChange : onFromUsdChange
-          }
-          bottomLabel={
-            fromValueMode === 'usd' && selectedFromToken
-              ? `~${fromAmount || '0.0'} ${selectedFromToken.symbol}`
-              : undefined
-          }
-          onToggleValueDisplay={onToggleFromValueMode}
-        />
-
-        <Button
-          className="-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-[var(--swap-divider-border)] bg-[var(--neutral-background-raised)] text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
-          onClick={onFlipTokens}
-          aria-label="Swap tokens"
-        >
-          <ArrowDownUp className="text-[var(--arrow-icon-btn)] size-4" />
-        </Button>
-
-        <SwapTokenPanel
-          label="Receive"
-          amount={
-            toValueMode === 'usd'
-              ? TWO_DECIMALS.format(toAmountUsdValue ?? 0)
-              : toAmount
-          }
-          token={selectedToToken}
-          usdValue={toValueMode === 'token' ? toAmountUsdValue : 0}
-          selectedChainIcon={toSelectedChainIcon}
-          selectedChainKey={toSelectedChainKey}
-          onSelectToken={() => setSelectorTarget('to')}
-          bottomLabel={
-            toValueMode === 'usd' && selectedToToken
-              ? `~${toAmount || '0.0'} ${selectedToToken.symbol}`
-              : undefined
-          }
-          onToggleValueDisplay={selectedToToken && onToggleToValueMode}
-          loading={isQuoteFetching && shouldShowQuote}
-        />
-      </div>
-
-      {quoteErrorMessage && (
-        <div
-          role="alert"
-          className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm"
-          style={{
-            background: 'var(--no-route-bg, rgba(239,68,68,0.08))',
-            border: '1px solid var(--no-route-border, rgba(239,68,68,0.25))',
-            color: 'var(--no-route-text, #ef4444)',
-          }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="mt-0.5 size-4 shrink-0"
-            aria-hidden="true"
+    <section className="mx-auto min-[1440px]:min-w-110 xl:max-w-95 min-[1440px]:max-w-max sm:max-w-90 w-full relative min-h-125 overflow-hidden">
+      <AnimatePresence initial={false}>
+        {!isSelectorOpen ? (
+          <motion.div
+            key="swap-ui"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute inset-0 flex flex-col gap-4"
           >
-            <path
-              fillRule="evenodd"
-              d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-              clipRule="evenodd"
+            <TokenRiskAlert
+              risk={risk ?? null}
+              riskError={riskError}
+              onClose={resetRiskCheck}
             />
-          </svg>
-          <span>{quoteErrorMessage}</span>
-        </div>
-      )}
 
-      <Button
-        className="rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base"
-        onClick={onPrimaryAction}
-        disabled={
-          primaryWallet
-            ? !hasTokenSelection || isCheckingRisk || Boolean(quoteErrorMessage)
-            : false
-        }
-      >
-        {primaryWallet
-          ? isCheckingRisk
-            ? 'Checking risk...'
-            : quoteErrorMessage
-              ? 'No Route Available'
-              : 'Review Swap'
-          : 'Connect Wallet'}
-      </Button>
+            <div className="flex flex-col gap-1">
+              <SwapTokenPanel
+                label="Send"
+                amount={fromValueMode === 'token' ? fromAmount : fromUsdInput}
+                token={selectedFromToken}
+                usdValue={fromAmountUsdValue}
+                selectedChainIcon={fromSelectedChainIcon}
+                selectedChainKey={fromSelectedChainKey}
+                onSelectToken={() => openSelector('from')}
+                editable
+                onAmountChange={
+                  fromValueMode === 'token'
+                    ? onFromAmountChange
+                    : onFromUsdChange
+                }
+                bottomLabel={
+                  fromValueMode === 'usd' && selectedFromToken
+                    ? `~${fromAmount || '0.0'} ${selectedFromToken.symbol}`
+                    : undefined
+                }
+                onToggleValueDisplay={onToggleFromValueMode}
+              />
 
-      <TokenSelectorModal
-        open={Boolean(selectorTarget)}
-        query={query}
-        onQueryChange={onQueryChange}
-        chainId={activeChainId}
-        selectedChainIcon={activeSelectedChainIcon}
-        selectedChainKey={activeSelectedChainKey}
-        networkMenuOpen={networkMenuOpen}
-        setNetworkMenuOpen={setNetworkMenuOpen}
-        networks={runtimeNetworks}
-        onChainSelect={onModalChainSelect}
-        tokens={filteredTokens}
-        balances={activeBalances}
-        onSelectToken={onSelectToken}
-        loadingDynamicTokens={activeLoadingDynamicTokens}
-        showImportOption={showImportOption}
-        canImport={canImport}
-        importing={importing}
-        importAddress={importAddress}
-        onImportToken={onImportToken}
-        importError={importError}
-        onClose={() => {
-          setSelectorTarget(null);
-          setNetworkMenuOpen(false);
-        }}
-      />
+              <Button
+                className="-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-(--swap-divider-border) bg-(--neutral-background-raised) text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
+                onClick={onFlipTokens}
+                aria-label="Swap tokens"
+              >
+                <ArrowDownUp className="text-(--arrow-icon-btn) size-4" />
+              </Button>
+
+              <SwapTokenPanel
+                label="Receive"
+                amount={
+                  toValueMode === 'usd'
+                    ? TWO_DECIMALS.format(toAmountUsdValue ?? 0)
+                    : toAmount
+                }
+                token={selectedToToken}
+                usdValue={toValueMode === 'token' ? toAmountUsdValue : 0}
+                selectedChainIcon={toSelectedChainIcon}
+                selectedChainKey={toSelectedChainKey}
+                onSelectToken={() => openSelector('to')}
+                bottomLabel={
+                  toValueMode === 'usd' && selectedToToken
+                    ? `~${toAmount || '0.0'} ${selectedToToken.symbol}`
+                    : undefined
+                }
+                onToggleValueDisplay={selectedToToken && onToggleToValueMode}
+                loading={isQuoteFetching && shouldShowQuote}
+              />
+            </div>
+
+            {quoteErrorMessage && (
+              <div
+                role="alert"
+                className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm"
+                style={{
+                  background: 'var(--no-route-bg, rgba(239,68,68,0.08))',
+                  border:
+                    '1px solid var(--no-route-border, rgba(239,68,68,0.25))',
+                  color: 'var(--no-route-text, #ef4444)',
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="mt-0.5 size-4 shrink-0"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{quoteErrorMessage}</span>
+              </div>
+            )}
+
+            <Button
+              className="rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base"
+              onClick={onPrimaryAction}
+              disabled={
+                primaryWallet
+                  ? !hasTokenSelection ||
+                    isCheckingRisk ||
+                    Boolean(quoteErrorMessage)
+                  : false
+              }
+            >
+              {primaryWallet
+                ? isCheckingRisk
+                  ? 'Checking risk...'
+                  : quoteErrorMessage
+                    ? 'No Route Available'
+                    : 'Review Swap'
+                : 'Connect Wallet'}
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="selector-ui"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute inset-0 flex flex-col gap-4"
+          >
+            <TokenSelectorModal
+              open={isSelectorOpen}
+              query={query}
+              onQueryChange={onQueryChange}
+              chainId={activeChainId}
+              selectedChainIcon={activeSelectedChainIcon}
+              selectedChainKey={activeSelectedChainKey}
+              networkMenuOpen={networkMenuOpen}
+              setNetworkMenuOpen={setNetworkMenuOpen}
+              networks={runtimeNetworks}
+              onChainSelect={onModalChainSelect}
+              tokens={filteredTokens}
+              balances={activeBalances}
+              onSelectToken={onSelectToken}
+              loadingDynamicTokens={activeLoadingDynamicTokens}
+              showImportOption={showImportOption}
+              canImport={canImport}
+              importing={importing}
+              importAddress={importAddress}
+              onImportToken={onImportToken}
+              importError={importError}
+              onClose={() => {
+                setSelectorTarget(null);
+                setNetworkMenuOpen(false);
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

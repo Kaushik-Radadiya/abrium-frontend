@@ -21,7 +21,7 @@ type Props = {
 };
 
 const TOKEN_BOX_CLASS =
-  'grid gap-2 rounded-[14px] border border-[var(--swap-token-border)] bg-[var(--neutral-background-raised)] p-4';
+  'grid gap-2 rounded-[14px] border-t border-[var(--swap-token-border)] bg-[var(--neutral-background-raised)] sm:p-4 p-2.5';
 const TOKEN_TOP_WALLET_CLASS = 'flex items-center gap-2 py-2.5 px-4';
 const TOKEN_SECTION_CLASS =
   'grid gap-1 rounded-[16px] border border-[var(--swap-token-border)] bg-[var(--neutral-background)]';
@@ -65,25 +65,25 @@ export function SwapTokenPanel({
         <WalletTrigger />
       </div>
       <div className={TOKEN_BOX_CLASS}>
-        <div className="text-[16px] leading-none text-[var(--neutral-text-textWeak)]">
+        <div className='text-[16px] leading-none text-[var(--neutral-text-textWeak)]'>
           {label}
         </div>
-        <div className="grid grid-cols-[1fr_auto] items-end gap-3">
-          <div className="grid gap-1.5">
+        <div className='grid grid-cols-[1fr_auto] items-end gap-3'>
+          <div className='grid gap-1.5'>
             {editable ? (
               <input
-                className="h-auto min-h-0 max-w-[248px] border-0 bg-transparent p-0 w-full font-normal font-mono text-3xl text-[var(--swap-amount)] outline-none placeholder:text-[var(--neutral-text-placeholder)]"
+                className='h-auto min-h-0 max-w-[248px] border-0 bg-transparent p-0 w-full font-normal font-mono lg:text-3xl text-2xl text-[var(--swap-amount)] outline-none placeholder:text-[var(--neutral-text-placeholder)]'
                 value={amount}
                 type="number"
                 onChange={(event) => onAmountChange?.(event.target.value)}
-                placeholder="0.0"
+                placeholder='0.0'
                 aria-label={`${label} amount`}
               />
             ) : loading ? (
               <div
-                className="flex min-h-12 items-center"
-                aria-label="Fetching quote..."
-                aria-busy="true"
+                className='flex min-h-12 items-center'
+                aria-label='Fetching quote...'
+                aria-busy='true'
               >
                 <div
                   style={{
@@ -100,7 +100,7 @@ export function SwapTokenPanel({
               </div>
             ) : (
               <div
-                className="flex min-h-12 items-center text-3xl font-normal font-mono select-none cursor-default"
+                className='flex min-h-12 items-center lg:text-3xl text-2xl font-normal font-mono select-none cursor-default'
                 style={{
                   color:
                     amount && amount !== '0.0'
@@ -108,12 +108,12 @@ export function SwapTokenPanel({
                       : 'var(--neutral-text-placeholder)',
                 }}
                 aria-label={`${label} amount (calculated)`}
-                aria-readonly="true"
+                aria-readonly='true'
               >
                 {amount && amount !== '0.0' ? amount : '0.0'}
               </div>
             )}
-            <div className="text-xs flex items-center gap-1 text-[var(--neutral-text-textWeak)]">
+            <div className='text-xs flex items-center gap-1 text-[var(--neutral-text-textWeak)]'>
               {loading ? (
                 <div
                   style={{

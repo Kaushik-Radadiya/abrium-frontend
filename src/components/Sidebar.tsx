@@ -6,7 +6,7 @@ import { ShimmerImage } from '@/components/ui/ShimmerImage';
 
 export function Sidebar() {
   return (
-    <aside className="flex h-screen min-w-[302px] flex-col justify-between border-r border-(--border) p-4 text-(--text) bg-(--panel)">
+    <aside className="flex h-screen min-[1440px]:min-w-[302px] flex-col justify-between border-r border-(--neutral-border) p-4 text-(--text) bg-(--panel)">
       <div>
         <div className="mb-4">
           <div className="flex items-center gap-3">
@@ -64,7 +64,7 @@ function SocialLink({ href, icon }: { href: string; icon: React.ReactNode }) {
   return (
     <Link
       href={href}
-      className="text-(--muted) hover:text-(--text) transition-colors rounded-lg border border-(--border) p-3 gap-2 w-full flex items-center justify-center"
+      className="text-(--muted) hover:text-(--text) transition-colors rounded-lg border border-(--neutral-border) p-3 gap-2 w-full flex items-center justify-center"
     >
       {icon}
     </Link>
