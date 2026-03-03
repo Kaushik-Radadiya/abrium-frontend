@@ -18,6 +18,7 @@ import {
 } from '@/lib/api.requests';
 import { getChainIconUrl } from '@/lib/icons';
 import { dedupeTokens } from '@/components/swap/utils';
+import { formatBalance } from '@/lib/formatAmount';
 
 type ImportedState = Record<number, UiToken[]>;
 
@@ -120,7 +121,7 @@ async function fetchBalancesForTokens(params: {
 }) {
   const client = createChainClient(params.rpcUrl);
   const next: Record<string, string> = Object.fromEntries(
-    params.tokens.map((token) => [token.address.toLowerCase(), '0.0000']),
+    params.tokens.map((token) => [token.address.toLowerCase(), '0']),
   );
   const nativeTokens = params.tokens.filter(
     (token) => token.address === 'native',
@@ -136,9 +137,9 @@ async function fetchBalancesForTokens(params: {
         address: params.walletAddress,
       });
       for (const token of nativeTokens) {
-        next[token.address.toLowerCase()] = Number(
+        next[token.address.toLowerCase()] = formatBalance(
           formatUnits(rawNativeBalance, token.decimals),
-        ).toFixed(4);
+        );
       }
     } catch {}
   }
@@ -168,9 +169,9 @@ async function fetchBalancesForTokens(params: {
           typeof result.result === 'bigint'
             ? result.result
             : BigInt(result.result);
-        next[token.address.toLowerCase()] = Number(
+        next[token.address.toLowerCase()] = formatBalance(
           formatUnits(rawBalance, token.decimals),
-        ).toFixed(4);
+        );
       });
     } catch {}
   }
@@ -353,7 +354,7 @@ export function useSwapData({
           const zeroBalances = trackedBalanceTokens.reduce<
             Record<string, string>
           >((acc, token) => {
-            acc[token.address.toLowerCase()] = '0.0000';
+            acc[token.address.toLowerCase()] = '0';
             return acc;
           }, {});
           setBalances(zeroBalances);

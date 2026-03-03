@@ -1,5 +1,6 @@
 import { formatUnits, getAddress, isAddress, parseUnits } from 'viem';
 import type { UiToken } from '@/lib/tokens';
+import { formatBalance } from '@/lib/formatAmount';
 
 export const FALLBACK_SWAPPER_ADDRESS =
   '0x000000000000000000000000000000000000dEaD';
@@ -60,11 +61,8 @@ export function formatAmountFromSmallest(
   decimals: number,
 ): string {
   try {
-    const formatted = formatUnits(BigInt(value), decimals);
-    if (!formatted.includes('.')) return formatted;
-    const [whole, fraction = ''] = formatted.split('.');
-    const trimmed = fraction.replace(/0+$/, '').slice(0, 8);
-    return trimmed ? `${whole}.${trimmed}` : whole;
+    const raw = formatUnits(BigInt(value), decimals);
+    return formatBalance(raw);
   } catch {
     return '0';
   }

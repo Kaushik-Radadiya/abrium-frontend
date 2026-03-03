@@ -26,13 +26,9 @@ import {
 } from '@/components/swap/utils/swapUtils';
 import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatUsd } from '@/lib/formatAmount';
 
 type SelectorTarget = 'from' | 'to' | null;
-
-const TWO_DECIMALS = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
 
 export function SwapWorkspace() {
   const { primaryWallet, setShowAuthFlow } = useDynamicContext();
@@ -113,13 +109,25 @@ export function SwapWorkspace() {
   );
 
   const hasTokenSelection = Boolean(selectedFromToken && selectedToToken);
+  const skipsRiskReview = selectedToToken?.address === 'native';
 
   const hasBlockingRisk = useMemo(
-    () => risk?.alertLevel === 'error' || risk?.decision === 'BLOCK',
-    [risk],
+    () =>
+      !skipsRiskReview &&
+      (risk?.alertLevel === 'error' || risk?.decision === 'BLOCK'),
+    [risk, skipsRiskReview],
+  );
+  const shouldShowRiskAlert = useMemo(
+    () =>
+      !skipsRiskReview &&
+      (Boolean(riskError) || Boolean(risk && risk.decision !== 'ALLOW')),
+    [risk, riskError, skipsRiskReview],
   );
 
-  const hasReviewed = useMemo(() => Boolean(risk), [risk]);
+  const hasReviewed = useMemo(
+    () => skipsRiskReview || Boolean(risk),
+    [risk, skipsRiskReview],
+  );
 
   // Token selector modal context
   const activeChainTokens =
@@ -363,7 +371,7 @@ export function SwapWorkspace() {
 
   const onReview = useCallback(async () => {
     if (!selectedFromToken || !selectedToToken) return;
-    if (selectedToToken.address === 'native') {
+    if (skipsRiskReview) {
       resetRiskCheck();
       return;
     }
@@ -378,6 +386,7 @@ export function SwapWorkspace() {
   }, [
     selectedFromToken,
     selectedToToken,
+    skipsRiskReview,
     toChainId,
     checkTokenRisk,
     resetRiskCheck,
@@ -416,26 +425,20 @@ export function SwapWorkspace() {
   const isSelectorOpen = Boolean(selectorTarget);
 
   return (
-    <section className="relative h-full">
+    <section className='relative h-full'>
       <AnimatePresence initial={false}>
         {!isSelectorOpen ? (
           <motion.div
-            key="swap-ui"
+            key='swap-ui'
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute inset-0 flex flex-col gap-4 mx-auto min-[1440px]:min-w-110 xl:max-w-95 min-[1440px]:max-w-max sm:max-w-90 w-full"
+            className='absolute inset-0 flex flex-col gap-4 mx-auto min-[1440px]:min-w-110 xl:max-w-95 min-[1440px]:max-w-max sm:max-w-90 w-full'
           >
-            <TokenRiskAlert
-              risk={risk ?? null}
-              riskError={riskError}
-              onClose={resetRiskCheck}
-            />
-
-            <div className="flex flex-col gap-1">
+            <div className='flex flex-col gap-1'>
               <SwapTokenPanel
-                label="Send"
+                label='Send'
                 amount={fromValueMode === 'token' ? fromAmount : fromUsdInput}
                 token={selectedFromToken}
                 usdValue={fromAmountUsdValue}
@@ -457,19 +460,17 @@ export function SwapWorkspace() {
               />
 
               <Button
-                className="-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-(--swap-divider-border) bg-(--neutral-background-raised) text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]"
+                className='-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-(--swap-divider-border) bg-(--neutral-background-raised) text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]'
                 onClick={onFlipTokens}
-                aria-label="Swap tokens"
+                aria-label='Swap tokens'
               >
-                <ArrowDownUp className="text-(--arrow-icon-btn) size-4" />
+                <ArrowDownUp className='text-(--arrow-icon-btn) size-4' />
               </Button>
 
               <SwapTokenPanel
-                label="Receive"
+                label='Receive'
                 amount={
-                  toValueMode === 'usd'
-                    ? TWO_DECIMALS.format(toAmountUsdValue ?? 0)
-                    : toAmount
+                  toValueMode === 'usd' ? formatUsd(toAmountUsdValue) : toAmount
                 }
                 token={selectedToToken}
                 usdValue={toValueMode === 'token' ? toAmountUsdValue : 0}
@@ -488,8 +489,8 @@ export function SwapWorkspace() {
 
             {quoteErrorMessage && (
               <div
-                role="alert"
-                className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm"
+                role='alert'
+                className='flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm'
                 style={{
                   background: 'var(--no-route-bg, rgba(239,68,68,0.08))',
                   border:
@@ -498,24 +499,33 @@ export function SwapWorkspace() {
                 }}
               >
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="mt-0.5 size-4 shrink-0"
-                  aria-hidden="true"
+                  xmlns='http://www.w3.org/2000/svg'
+                  viewBox='0 0 20 20'
+                  fill='currentColor'
+                  className='mt-0.5 size-4 shrink-0'
+                  aria-hidden='true'
                 >
                   <path
-                    fillRule="evenodd"
-                    d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                    clipRule="evenodd"
+                    fillRule='evenodd'
+                    d='M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z'
+                    clipRule='evenodd'
                   />
                 </svg>
                 <span>{quoteErrorMessage}</span>
               </div>
             )}
 
+            {shouldShowRiskAlert ? (
+              <TokenRiskAlert
+                key={`${risk?.decision ?? 'none'}:${risk?.alertMessage ?? 'none'}:${riskError ?? 'none'}`}
+                risk={risk ?? null}
+                riskError={riskError}
+                onClose={resetRiskCheck}
+              />
+            ) : null}
+
             <Button
-              className="rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base"
+              className='rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base'
               onClick={onPrimaryAction}
               disabled={
                 primaryWallet
@@ -536,12 +546,12 @@ export function SwapWorkspace() {
           </motion.div>
         ) : (
           <motion.div
-            key="selector-ui"
+            key='selector-ui'
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute inset-0 flex flex-col gap-4"
+            className='absolute inset-0 flex flex-col gap-4'
           >
             <TokenSelectorModal
               open={isSelectorOpen}
