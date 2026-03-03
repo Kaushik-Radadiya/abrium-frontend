@@ -180,14 +180,14 @@ export function TokenSelectorModal({
     <div className="flex relative h-full items-start w-full min-h-0  pl-7 mx-auto min-[1440px]:min-w-117 xl:max-w-110 min-[1440px]:max-w-max sm:max-w-90">
       <button
         onClick={onClose}
-        className="z-10 absolute top-1 -left-3 rounded-full bg-[var(--neutral-background-raised-hover)] p-1"
+        className="z-10 absolute top-1 -left-5 rounded-full bg-[var(--neutral-background-raised-hover)] p-2"
       >
-        <ChevronLeftIcon className="size-5 opacity-70" />
+        <ChevronLeftIcon className="size-6 opacity-70" />
       </button>
       <div className="border w-full border-[var(--neutral-border)] rounded-2xl bg-[var(--neutral-background)] text-[var(--neutral-text)]">
         {/* Header */}
-        <div className="flex items-center gap-3 p-4">
-          <div className="w-full flex py-1 px-3 items-center gap-2.5 rounded-full border border-[var(--search-row-border)] bg-[var(--search-row-bg)]">
+        <div className="flex items-center gap-3 py-4 px-3">
+          <div className="w-full flex py-1 px-3 items-center gap-2.5 rounded-lg border border-[var(--search-row-border)] bg-[var(--search-row-bg)]">
             <span
               className="text-lg leading-none opacity-70"
               aria-hidden="true"
