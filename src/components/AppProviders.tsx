@@ -1,6 +1,6 @@
 'use client';
 
-import { PropsWithChildren, useCallback, useState } from 'react';
+import { PropsWithChildren, useCallback, useMemo, useState } from 'react';
 import {
   SdkViewType,
   SdkViewSectionType,
@@ -199,11 +199,106 @@ function DynamicEmbeddedWalletFlowGuard() {
 function AppProvidersContent({ children }: PropsWithChildren) {
   const { theme } = useAppTheme();
   const [queryClient] = useState(() => new QueryClient());
+  const dynamicCssOverrides = useMemo(
+    () => `
+    .modal,
+    .dynamic-widget-modal {
+      position: fixed !important;
+      top: 92px !important;
+      right: 8px !important;
+      bottom: 0 !important;
+      left: auto !important;
+      margin: 0 !important;
+      height: max-content !important;
+      width : max-content !important;
+      transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+      will-change: transform !important;
+    }
+
+    .modal-card {
+      border: 0.0625rem solid var(--neutral-border) !important;
+    }
+
+    .dynamic-widget-card, .modal-card {
+      border-radius: 1.5rem !important;
+      width: 100% !important;
+      min-width: 358px !important;
+      max-width: 358px !important;
+    }
+
+    .modal-component__backdrop {
+     backdrop-filter: unset !important;
+     background-color: transparent !important;
+    }
+
+     .popper-content {
+      left: auto !important;
+      right: 0 !important;
+    }
+      
+    .dynamic-shadow-dom-content > div[style*='opacity: 1'] .modal,
+    .dynamic-shadow-dom-content > div[style*='opacity: 1'] .dynamic-widget-modal {
+      transform: translateX(0) !important;
+    }
+
+    .dynamic-shadow-dom-content > div[style*='opacity: 0'] .modal,
+    .dynamic-shadow-dom-content > div[style*='opacity: 0'] .dynamic-widget-modal {
+      transform: translateX(100%) !important;
+    }
+
+    .modal-component__backdrop {
+      transition: opacity 220ms ease !important;
+    }
+
+    #dynamic-widget,
+    #dynamic-modal,
+    .dynamic-shadow-dom,
+    .dynamic-shadow-dom-content {
+      --dynamic-font-family-primary: Inter, "Inter Fallback", sans-serif !important;
+      --dynamic-base-1: var(--neutral-background) !important;
+      --dynamic-base-2: var(--neutral-background-raised) !important;
+      --dynamic-base-3: var(--neutral-border) !important;
+      --dynamic-base-4: var(--neutral-border) !important;
+      --dynamic-button-primary-background: var(--neutral-background-raised) !important;
+      --dynamic-button-primary-border: 0.0625rem solid var(--neutral-border) !important;
+      --dynamic-text-primary: var(--neutral-text) !important;
+      --dynamic-text-secondary: var(--neutral-text-textWeak) !important;
+      --dynamic-footer-border-top: 0.0625rem solid var(--neutral-border) !important;
+      --dynamic-border-color: var(--neutral-border) !important;
+      --dynamic-brand-primary-color: var(--neutral-background-strong) !important;
+      --dynamic-wallet-list-tile-background: var(--neutral-background-raised) !important;
+      --dynamic-wallet-list-tile-background-hover: var(--neutral-background-hover) !important;
+      --dynamic-search-bar-background: var(--neutral-background-raised) !important;
+      --dynamic-search-bar-background-hover: var(--neutral-background-hover) !important;
+      --dynamic-search-bar-background-focus: var(--neutral-background-hover) !important;
+      --dynamic-search-bar-border: 0.0625rem solid var(--neutral-border) !important;
+      --dynamic-search-bar-border-hover: 0.0625rem solid var(--neutral-border) !important;
+      --dynamic-search-bar-border-focus: 0.0625rem solid var(--neutral-border) !important;
+    }
+
+    #dynamic-widget *,
+    #dynamic-modal *,
+    .dynamic-shadow-dom-content * {
+      font-family: Inter, "Inter Fallback", sans-serif !important;
+    }
+
+    .typography--inherit {
+      color: var(--neutral-background) !important;
+    }
+
+  `,
+    [],
+  );
+
+  const dynamicSettingsWithStyle = useMemo(
+    () => ({ ...dynamicSettings, cssOverrides: dynamicCssOverrides }),
+    [dynamicCssOverrides],
+  );
 
   return (
-    <DynamicContextProvider settings={dynamicSettings} theme={theme}>
+    <DynamicContextProvider settings={dynamicSettingsWithStyle} theme={theme}>
       <DynamicEmbeddedWalletFlowGuard />
-      <DynamicUserProfile variant='modal' />
+      <DynamicUserProfile variant="modal" />
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>{children}</TooltipProvider>

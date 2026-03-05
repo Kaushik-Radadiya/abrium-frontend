@@ -190,7 +190,6 @@ export function SwapWorkspace() {
 
   const quoteRequest = useMemo<SwapQuoteRequestPayload | null>(() => {
     if (
-      !hasReviewed ||
       !selectedFromToken ||
       !selectedToToken ||
       !quoteAmount ||
@@ -209,7 +208,6 @@ export function SwapWorkspace() {
   }, [
     fromChainId,
     hasBlockingRisk,
-    hasReviewed,
     normalizedSwapper,
     quoteAmount,
     selectedFromToken,
@@ -230,7 +228,7 @@ export function SwapWorkspace() {
   );
 
   const shouldShowQuote =
-    hasTokenSelection && hasReviewed && !quoteErrorMessage && !hasBlockingRisk;
+    hasTokenSelection && !quoteErrorMessage && !hasBlockingRisk;
 
   useQuoteReceiveSync(
     shouldShowQuote ? quote : null,
@@ -318,9 +316,8 @@ export function SwapWorkspace() {
   const onSelectToken = useCallback(
     (address: string) => {
       if (selectorTarget === 'from') {
-        // Changing the Send token invalidates any previous quote output
+        // Keep the entered send amount and re-quote against the new token.
         setFromToken(address);
-        setFromAmount('0.0');
         setToAmount('0.0');
       }
       if (selectorTarget === 'to') {
