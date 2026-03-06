@@ -440,7 +440,7 @@ export function SwapWorkspace() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className='absolute inset-0 flex flex-col gap-4 mx-auto min-[1440px]:min-w-110 xl:max-w-95 min-[1440px]:max-w-max sm:max-w-90 w-full'
+            className='absolute inset-0 flex flex-col gap-4 mx-auto min-[1441px]:min-w-110 xl:max-w-95 min-[1441px]:max-w-max sm:max-w-90 w-full'
           >
             <div className='flex flex-col gap-1'>
               <SwapTokenPanel

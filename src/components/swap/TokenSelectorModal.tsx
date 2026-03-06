@@ -6,11 +6,7 @@ import { UiToken } from '@/lib/tokens';
 import { getChainIconUrl, getTokenIconUrl } from '@/lib/icons';
 import { IconWithFallback } from '@/components/swap/IconWithFallback';
 import { displayBalance } from '@/components/swap/utils';
-import {
-  ChevronDownIcon,
-  SearchIcon,
-  ChevronLeftIcon,
-} from 'lucide-react';
+import { ChevronDownIcon, SearchIcon, ChevronLeftIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
   DropdownMenu,
@@ -176,7 +172,7 @@ export function TokenSelectorModal({
   if (!open) return null;
 
   return (
-    <div className="flex relative h-full items-start w-full min-h-0  pl-7 mx-auto min-[1440px]:min-w-117 xl:max-w-110 min-[1440px]:max-w-max sm:max-w-90">
+    <div className="flex relative h-full items-start w-full min-h-0  pl-7 mx-auto min-[1441px]:min-w-117 xl:max-w-110 min-[1441px]:max-w-max sm:max-w-90">
       <button
         onClick={onClose}
         className="z-10 absolute top-1 -left-5 rounded-full bg-[var(--neutral-background-raised-hover)] p-2"
