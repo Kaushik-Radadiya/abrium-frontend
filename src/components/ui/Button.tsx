@@ -4,12 +4,15 @@ const buttonVariants = ({
     variant = "default",
     size = "default",
     className = "",
+    disabled = false,
 }: {
     variant?: "default" | "icon" | "ghost" | "outline";
     size?: "default" | "sm" | "lg" | "icon" | "none";
     className?: string;
+    disabled?: boolean;
 } = {}) => {
-    const baseStyles = "cursor-pointer flex gap-2 whitespace-nowrap outline-none transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed";
+    const baseStyles = "flex gap-2 whitespace-nowrap outline-none transition-all focus-visible:outline-none";
+    const stateStyles = disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer";
 
     const variants = {
         default: "border bg-[var(--neutral-background-raised)] border-[var(--neutral-border)] leading-[16px]",
@@ -26,7 +29,7 @@ const buttonVariants = ({
         none: "",
     };
 
-    return `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`.trim();
+    return `${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${stateStyles}`.trim();
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -36,14 +39,16 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant = "default", size = "default", isLoading = false, children, disabled, ...props }, ref) => {
+    ({ className, variant = "default", size = "default", isLoading = false, children, disabled, style, ...props }, ref) => {
         const isDisabled = disabled || isLoading;
+        const computedStyle = isDisabled ? { ...style, cursor: "not-allowed" } : style;
 
         return (
             <button
                 ref={ref}
-                className={buttonVariants({ variant, size, className })}
+                className={buttonVariants({ variant, size, className, disabled: isDisabled })}
                 disabled={isDisabled}
+                style={computedStyle}
                 {...props}
             >
                 {isLoading ? (
