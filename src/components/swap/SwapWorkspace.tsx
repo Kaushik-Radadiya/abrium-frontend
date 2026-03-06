@@ -12,6 +12,7 @@ import { TokenSelectorModal } from '@/components/swap/TokenSelectorModal';
 import { useSwapData } from '@/components/swap/hooks/useSwapData';
 import { useTokenUsdValue } from '@/components/swap/hooks/useTokenUsdValue';
 import { useSwapQuote } from '@/components/swap/hooks/useSwapQuote';
+import { useCountUpValue } from '@/components/swap/hooks/useCountUpValue';
 import {
   useFromTokenSync,
   useToTokenSync,
@@ -231,6 +232,11 @@ export function SwapWorkspace() {
 
   const shouldShowQuote =
     hasTokenSelection && hasReviewed && !quoteErrorMessage && !hasBlockingRisk;
+  const animatedToAmount = useCountUpValue(toAmount, {
+    enabled: toValueMode === 'token' && shouldShowQuote && !isQuoteFetching,
+    durationMs: 800,
+    maxDecimals: 6,
+  });
 
   useQuoteReceiveSync(
     shouldShowQuote ? quote : null,
@@ -460,7 +466,7 @@ export function SwapWorkspace() {
               />
 
               <Button
-                className='-my-5 z-10 relative size-10 flex items-center justify-center mx-auto rounded-full border border-(--swap-divider-border) bg-(--neutral-background-raised) text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]'
+                className='-my-5 z-10 relative hover:rotate-180 transition-transform duration-300 size-10 flex items-center justify-center mx-auto rounded-full border border-(--swap-divider-border) bg-(--neutral-background-raised) text-[24px] shadow-[0_0_0_4.5px_var(--swap-panel-bg)]'
                 onClick={onFlipTokens}
                 aria-label='Swap tokens'
               >
@@ -470,7 +476,9 @@ export function SwapWorkspace() {
               <SwapTokenPanel
                 label='Receive'
                 amount={
-                  toValueMode === 'usd' ? formatUsd(toAmountUsdValue) : toAmount
+                  toValueMode === 'usd'
+                    ? formatUsd(toAmountUsdValue)
+                    : animatedToAmount
                 }
                 token={selectedToToken}
                 usdValue={toValueMode === 'token' ? toAmountUsdValue : 0}

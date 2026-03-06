@@ -8,7 +8,6 @@ import { IconWithFallback } from '@/components/swap/IconWithFallback';
 import { displayBalance } from '@/components/swap/utils';
 import {
   ChevronDownIcon,
-  ChevronUpIcon,
   SearchIcon,
   ChevronLeftIcon,
 } from 'lucide-react';
@@ -19,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { showAddress } from '@/lib/utils';
+import { cn, showAddress } from '@/lib/utils';
 
 type RuntimeNetwork = {
   chain: SupportedChain;
@@ -227,12 +226,13 @@ export function TokenSelectorModal({
                         </span>
                       ) : null}
                     </span>
-                    <span className="text-sm leading-none text-[var(--network-chevron)]">
-                      {networkMenuOpen ? (
-                        <ChevronUpIcon className="text-[var(--arrow-icon-btn)] size-4" />
-                      ) : (
-                        <ChevronDownIcon className="text-[var(--arrow-icon-btn)] size-4" />
+                    <span
+                      className={cn(
+                        'text-sm leading-none transition-transform duration-200 text-[var(--network-chevron)]',
+                        { 'rotate-180': networkMenuOpen },
                       )}
+                    >
+                      <ChevronDownIcon className="size-4" />
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
