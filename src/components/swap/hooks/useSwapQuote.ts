@@ -3,7 +3,11 @@
 import { useQuery } from '@tanstack/react-query';
 import type { SwapQuoteRequestPayload } from '@/lib/quotes.types';
 import { useDebouncedValue } from '@/components/swap/hooks/useDebouncedValue';
-import { fetchSwapQuote, LiFiQuoteError } from '@/lib/api';
+import {
+  fetchSwapQuote,
+  LiFiQuoteError,
+  fetchUserInfo,
+} from '@/lib/api';
 
 type Params = {
   request: SwapQuoteRequestPayload | null;
@@ -33,6 +37,23 @@ export function useSwapQuote({ request, debounceMs = 350 }: Params) {
       }
       return failureCount < 1;
     },
+    refetchOnWindowFocus: false,
+  });
+}
+
+type UserInfoParams = {
+  walletAddress?: string | null;
+};
+
+export function useUserInfoQuery({ walletAddress }: UserInfoParams) {
+  return useQuery({
+    queryKey: ['user', 'info', walletAddress],
+    enabled: Boolean(walletAddress),
+    queryFn: async () => {
+      if (!walletAddress) return null;
+      return fetchUserInfo(walletAddress);
+    },
+    retry: false,
     refetchOnWindowFocus: false,
   });
 }

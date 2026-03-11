@@ -6,6 +6,7 @@ import { TokenPill } from '@/components/swap/TokenPill';
 import { WalletTrigger } from '@/components/WalletTrigger';
 import { formatApproxUsd } from '@/lib/formatAmount';
 import { OverflowTooltipText } from '@/components/ui/OverflowTooltipText';
+import type { SecurityLevel } from '@/lib/api';
 
 type Props = {
   label: string;
@@ -21,6 +22,8 @@ type Props = {
   bottomLabel?: string;
   onToggleValueDisplay?: () => void;
   onReceiveWalletChange?: (address: string | null) => void;
+  riskLevel?: SecurityLevel | null;
+  animateRiskBorder?: boolean;
 };
 
 const TOKEN_BOX_CLASS =
@@ -43,6 +46,8 @@ export function SwapTokenPanel({
   bottomLabel,
   onToggleValueDisplay,
   onReceiveWalletChange,
+  riskLevel = null,
+  animateRiskBorder = false,
 }: Props) {
   return (
     <div className={TOKEN_SECTION_CLASS}>
@@ -146,6 +151,8 @@ export function SwapTokenPanel({
             selectedChainIcon={selectedChainIcon}
             selectedChainKey={selectedChainKey}
             onClick={onSelectToken}
+            riskLevel={riskLevel}
+            animateRiskBorder={animateRiskBorder}
           />
         </div>
       </div>

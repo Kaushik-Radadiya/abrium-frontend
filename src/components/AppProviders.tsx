@@ -254,7 +254,7 @@ function AppProvidersContent({ children }: PropsWithChildren) {
     #dynamic-modal,
     .dynamic-shadow-dom,
     .dynamic-shadow-dom-content {
-      --dynamic-font-family-primary: Inter, "Inter Fallback", sans-serif !important;
+      --dynamic-font-family-primary: Inter, "Inter Fallback", sans-serif;
       --dynamic-base-1: var(--neutral-background) !important;
       --dynamic-base-2: var(--neutral-background-raised) !important;
       --dynamic-base-3: var(--neutral-border) !important;
@@ -276,10 +276,22 @@ function AppProvidersContent({ children }: PropsWithChildren) {
       --dynamic-search-bar-border-focus: 0.0625rem solid var(--neutral-border) !important;
     }
 
+    .active-wallet-information__address, 
+    .typography--numbers-display,
+    .wallet__row--clickable .typography--primary {
+     font-family: var(--font-mono) !important;
+    }
+
+    .typography--numbers-display {
+      font-size: var(--text-3xl) !important;
+      line-height: var(--line-height-3xl) !important;
+      font-weight: 400 !important;
+    }
+
     #dynamic-widget *,
     #dynamic-modal *,
     .dynamic-shadow-dom-content * {
-      font-family: Inter, "Inter Fallback", sans-serif !important;
+      font-family: Inter, "Inter Fallback", sans-serif;
     }
 
     .typography--inherit {
@@ -298,7 +310,7 @@ function AppProvidersContent({ children }: PropsWithChildren) {
   return (
     <DynamicContextProvider settings={dynamicSettingsWithStyle} theme={theme}>
       <DynamicEmbeddedWalletFlowGuard />
-      <DynamicUserProfile variant="modal" />
+      <DynamicUserProfile variant='modal' />
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>{children}</TooltipProvider>

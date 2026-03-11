@@ -7,6 +7,11 @@ export type UiToken = {
   name: string
   decimals: number
   logoURI?: string
+  priceUsd?: number | null
+  priceChange1hPercent?: number | null
+  priceChange24hPercent?: number | null
+  priceChange7dPercent?: number | null
+  apy?: number | null
 }
 
 export const CURATED_TOKENS: UiToken[] = [

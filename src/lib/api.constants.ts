@@ -5,6 +5,7 @@ const withBaseUrl = (path: string) => `${API_BASE_URL}${path}`;
 export const BASE_URLS = {
   CATALOG: withBaseUrl('/catalog'),
   RISK: withBaseUrl('/risk'),
+  USER: withBaseUrl('/user'),
 } as const;
 
 export function ensureApiBaseUrlConfigured() {

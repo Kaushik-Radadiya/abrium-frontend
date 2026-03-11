@@ -6,7 +6,7 @@ import { getAddress, isAddress } from 'viem';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { DEFAULT_CHAIN_ID, SUPPORTED_CHAINS } from '@/lib/chains';
 import { useTokenRiskMutation } from '@/lib/api-hooks';
-import { TokenRiskAlert } from '@/components/swap/TokenRiskAlert';
+import { SecurityRiskModal } from '@/components/swap/SecurityRiskModal';
 import { SwapTokenPanel } from '@/components/swap/SwapTokenPanel';
 import { TokenSelectorModal } from '@/components/swap/TokenSelectorModal';
 import { useSwapData } from '@/components/swap/hooks/useSwapData';
@@ -28,11 +28,13 @@ import {
 import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatUsd } from '@/lib/formatAmount';
+import type { SecurityLevel } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 type SelectorTarget = 'from' | 'to' | null;
 
 export function SwapWorkspace() {
-  const { primaryWallet, setShowAuthFlow } = useDynamicContext();
+  const { primaryWallet, user, setShowAuthFlow } = useDynamicContext();
   const walletAddress = primaryWallet?.address;
 
   const [fromChainId, setFromChainId] = useState(DEFAULT_CHAIN_ID);
@@ -50,7 +52,9 @@ export function SwapWorkspace() {
   const [fromValueMode, setFromValueMode] = useState<'token' | 'usd'>('token');
   const [fromUsdInput, setFromUsdInput] = useState('');
   const [toValueMode, setToValueMode] = useState<'token' | 'usd'>('token');
-  const [receiveWalletAddress, setReceiveWalletAddress] = useState<string | null>(null);
+  const [showDangerModal, setShowDangerModal] = useState(false);
+  const [dangerProceedAccepted, setDangerProceedAccepted] = useState(false);
+  const [hasReviewedQuote, setHasReviewedQuote] = useState(false);
 
   const {
     chainTokens: fromChainTokens,
@@ -97,8 +101,14 @@ export function SwapWorkspace() {
   const riskError =
     riskMutationError instanceof Error ? riskMutationError.message : null;
 
+  const clearRiskState = useCallback(() => {
+    setShowDangerModal(false);
+    setDangerProceedAccepted(false);
+    resetRiskCheck();
+  }, [resetRiskCheck]);
+
   useFromTokenSync(fromChainTokens, fromToken, setFromToken);
-  useToTokenSync(toChainTokens, toToken, setToToken, resetRiskCheck);
+  useToTokenSync(toChainTokens, toToken, setToToken, clearRiskState);
 
   const selectedFromToken = useMemo(
     () => fromChainTokens.find((t) => t.address === fromToken),
@@ -114,17 +124,18 @@ export function SwapWorkspace() {
   const skipsRiskReview = selectedToToken?.address === 'native';
 
   const hasBlockingRisk = useMemo(
-    () =>
-      !skipsRiskReview &&
-      (risk?.alertLevel === 'error' || risk?.decision === 'BLOCK'),
+    () => !skipsRiskReview && Boolean(risk && risk.securityLevel === 'danger'),
     [risk, skipsRiskReview],
   );
-  const shouldShowRiskAlert = useMemo(
-    () =>
-      !skipsRiskReview &&
-      (Boolean(riskError) || Boolean(risk && risk.decision !== 'ALLOW')),
-    [risk, riskError, skipsRiskReview],
-  );
+
+  const shouldEnforceDangerGuard = hasBlockingRisk && !dangerProceedAccepted;
+
+  const receiveRiskLevel = useMemo<SecurityLevel | null>(() => {
+    if (skipsRiskReview) return null;
+    if (riskError) return 'caution';
+    if (!risk) return null;
+    return risk.securityLevel;
+  }, [risk, riskError, skipsRiskReview]);
 
   const hasReviewed = useMemo(
     () => skipsRiskReview || Boolean(risk),
@@ -190,13 +201,13 @@ export function SwapWorkspace() {
     [fromAmount, selectedFromToken],
   );
 
-  const quoteRequest = useMemo<SwapQuoteRequestPayload | null>(() => {
+  const currentQuoteRequest = useMemo<SwapQuoteRequestPayload | null>(() => {
     if (
       !hasReviewed ||
       !selectedFromToken ||
       !selectedToToken ||
       !quoteAmount ||
-      hasBlockingRisk
+      shouldEnforceDangerGuard
     ) {
       return null;
     }
@@ -210,7 +221,7 @@ export function SwapWorkspace() {
     };
   }, [
     fromChainId,
-    hasBlockingRisk,
+    shouldEnforceDangerGuard,
     hasReviewed,
     normalizedSwapper,
     quoteAmount,
@@ -218,6 +229,8 @@ export function SwapWorkspace() {
     selectedToToken,
     toChainId,
   ]);
+
+  const quoteRequest = hasReviewedQuote ? currentQuoteRequest : null;
 
   const {
     data: quote,
@@ -232,7 +245,12 @@ export function SwapWorkspace() {
   );
 
   const shouldShowQuote =
-    hasTokenSelection && hasReviewed && !quoteErrorMessage && !hasBlockingRisk;
+    hasTokenSelection &&
+    hasReviewed &&
+    hasReviewedQuote &&
+    !quoteErrorMessage &&
+    !shouldEnforceDangerGuard;
+
   const animatedToAmount = useCountUpValue(toAmount, {
     enabled: toValueMode === 'token' && shouldShowQuote && !isQuoteFetching,
     durationMs: 800,
@@ -311,6 +329,7 @@ export function SwapWorkspace() {
 
   const onFlipTokens = useCallback(() => {
     if (!toToken) return;
+    setHasReviewedQuote(false);
     setFromChainId(toChainId);
     setToChainId(fromChainId);
     setFromToken(toToken);
@@ -323,7 +342,10 @@ export function SwapWorkspace() {
   }, [fromChainId, fromToken, toAmount, toChainId, toToken]);
 
   const onSelectToken = useCallback(
-    (address: string) => {
+    async (address: string) => {
+      clearRiskState();
+      setHasReviewedQuote(false);
+
       if (selectorTarget === 'from') {
         // Changing the Send token invalidates any previous quote output
         setFromToken(address);
@@ -345,8 +367,19 @@ export function SwapWorkspace() {
       setNetworkMenuOpen(false);
       setQuery('');
       setImportError(null);
+
+      if (selectorTarget !== 'to' || address === 'native') return;
+
+      try {
+        await checkTokenRisk({
+          chainId: toChainId,
+          tokenAddress: address,
+        });
+      } catch {
+        // handled via mutation error state
+      }
     },
-    [selectorTarget],
+    [checkTokenRisk, clearRiskState, selectorTarget, toChainId],
   );
 
   const onQueryChange = useCallback((value: string) => {
@@ -364,7 +397,7 @@ export function SwapWorkspace() {
     try {
       const checksummedAddress = getAddress(importAddress);
       await activeImportTokenByAddress(checksummedAddress);
-      onSelectToken(checksummedAddress);
+      await onSelectToken(checksummedAddress);
     } catch (err) {
       setImportError(
         err instanceof Error && err.message
@@ -376,43 +409,42 @@ export function SwapWorkspace() {
     }
   }, [activeImportTokenByAddress, importAddress, onSelectToken]);
 
-  const onReview = useCallback(async () => {
-    if (!selectedFromToken || !selectedToToken) return;
-    if (skipsRiskReview) {
-      resetRiskCheck();
-      return;
-    }
-    try {
-      await checkTokenRisk({
-        chainId: toChainId,
-        tokenAddress: selectedToToken.address,
-      });
-    } catch {
-      // handled via mutation error state
-    }
-  }, [
-    selectedFromToken,
-    selectedToToken,
-    skipsRiskReview,
-    toChainId,
-    checkTokenRisk,
-    resetRiskCheck,
-  ]);
-
   const onPrimaryAction = useCallback(() => {
     if (!primaryWallet) {
       setShowAuthFlow(true);
       return;
     }
     if (!selectedFromToken || !selectedToToken) return;
-    void onReview();
+    if (shouldEnforceDangerGuard) {
+      setShowDangerModal(true);
+      return;
+    }
+    if (!currentQuoteRequest) {
+      setHasReviewedQuote(false);
+      return;
+    }
+    setHasReviewedQuote(true);
   }, [
-    onReview,
+    currentQuoteRequest,
+    setHasReviewedQuote,
     primaryWallet,
     selectedFromToken,
     selectedToToken,
     setShowAuthFlow,
+    shouldEnforceDangerGuard,
   ]);
+
+  const onDangerGoBack = useCallback(() => {
+    setToToken('');
+    setToAmount('0.0');
+    setToValueMode('token');
+    clearRiskState();
+  }, [clearRiskState]);
+
+  const onDangerProceedAnyway = useCallback(() => {
+    setDangerProceedAccepted(true);
+    setShowDangerModal(false);
+  }, []);
 
   const onModalChainSelect = useCallback(
     (nextChainId: number) => {
@@ -422,15 +454,19 @@ export function SwapWorkspace() {
     [selectorTarget],
   );
 
-  const openSelector = useCallback((target: Exclude<SelectorTarget, null>) => {
-    setQuery('');
-    setImportError(null);
-    setNetworkMenuOpen(false);
-    setSelectorTarget(target);
-  }, []);
+  const openSelector = useCallback(
+    (target: Exclude<SelectorTarget, null>) => {
+      clearRiskState();
+      setHasReviewedQuote(false);
+      setQuery('');
+      setImportError(null);
+      setNetworkMenuOpen(false);
+      setSelectorTarget(target);
+    },
+    [clearRiskState],
+  );
 
   const isSelectorOpen = Boolean(selectorTarget);
-
   return (
     <section className='relative h-full'>
       <AnimatePresence initial={false}>
@@ -476,7 +512,6 @@ export function SwapWorkspace() {
 
               <SwapTokenPanel
                 label='Receive'
-                onReceiveWalletChange={setReceiveWalletAddress}
                 amount={
                   toValueMode === 'usd'
                     ? formatUsd(toAmountUsdValue)
@@ -494,6 +529,8 @@ export function SwapWorkspace() {
                 }
                 onToggleValueDisplay={selectedToToken && onToggleToValueMode}
                 loading={isQuoteFetching && shouldShowQuote}
+                riskLevel={receiveRiskLevel}
+                animateRiskBorder={Boolean(receiveRiskLevel)}
               />
             </div>
 
@@ -525,28 +562,24 @@ export function SwapWorkspace() {
               </div>
             )}
 
-            {shouldShowRiskAlert ? (
-              <TokenRiskAlert
-                key={`${risk?.decision ?? 'none'}:${risk?.alertMessage ?? 'none'}:${riskError ?? 'none'}`}
-                risk={risk ?? null}
-                riskError={riskError}
-                onClose={resetRiskCheck}
-              />
-            ) : null}
-
             <Button
-              className='rounded-full justify-center border-0 bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base'
+              className={cn(
+                'rounded-full justify-center border border-transparent bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base',
+                {
+                  'bg-(--neutral-background-raised) text-(--neutral-text-textWeak) border-(--neutral-color-denger)!':
+                    shouldEnforceDangerGuard,
+                },
+              )}
               onClick={onPrimaryAction}
               disabled={
                 primaryWallet
                   ? !hasTokenSelection ||
                     isCheckingRisk ||
-                    Boolean(quoteErrorMessage) ||
-                    hasBlockingRisk
+                    Boolean(quoteErrorMessage)
                   : false
               }
             >
-              {primaryWallet
+              {primaryWallet || user
                 ? isCheckingRisk
                   ? 'Checking risk...'
                   : quoteErrorMessage
@@ -593,6 +626,13 @@ export function SwapWorkspace() {
           </motion.div>
         )}
       </AnimatePresence>
+      <SecurityRiskModal
+        open={showDangerModal}
+        onOpenChange={setShowDangerModal}
+        reasons={risk?.reasons}
+        onGoBack={onDangerGoBack}
+        onProceedAnyway={onDangerProceedAnyway}
+      />
     </section>
   );
 }

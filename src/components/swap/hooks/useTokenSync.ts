@@ -28,10 +28,9 @@ export function useToTokenSync(
   resetRiskCheck: () => void,
 ) {
   useEffect(() => {
-    resetRiskCheck();
-
     if (chainTokens.length === 0 || !toToken) return;
     if (!chainTokens.some((t) => t.address === toToken)) {
+      resetRiskCheck();
       setToToken('');
     }
   }, [chainTokens, toToken, setToToken, resetRiskCheck]);

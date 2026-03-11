@@ -12,11 +12,17 @@
   --topbar-border: #d9dfeb;
   --crumbs: #677084;
 
+  --neutral-color-denger:#FF3B30;
+  --neutral-color-caution: #FFD700;
+  --neutral-color-verified:#00FF00;
+
   --arrow-icon-btn: #6B6B6B;
   --neutral-text: #0A0A0A;
   --neutral-text-textWeak: #6B6B6B;
   --neutral-text-textStrong: #0A0A0A;
   --neutral-text-placeholder: #A3A3A3;
+  --neutral-text-sucess:#16A34A;
+  --neutral-text-error:#DC2626;
 
 
   --neutral-border: #E5E5E5;
@@ -26,8 +32,12 @@
   --neutral-background-raised: #FAFAFA;
   --neutral-background-strong: #0A0A0A;
   --neutral-background-raised-hover: #f0f0f0;
+  --neutral-background-sucess:#16A34A;
+  --neutral-background-error:#DC2626;
 
-  --wallet-btn-border: #b9c3d3;
+  --neutral-border-sucess:#22C55E33;
+  --neutral-border-error:#FCA5A5;
+  --wallet-btn-border: #b9c3d3; 
   --wallet-btn-text: #0f172a;
   --wallet-btn-bg: #eef2f8;
 
@@ -119,6 +129,8 @@
     --neutral-text-textWeak: #A3A3A3;
     --neutral-text-textStrong: #FAFAFA;
     --neutral-text-placeholder: #333333;
+    --neutral-text-sucess:#22C55E;
+    --neutral-text-error:#F33838;
 
     --neutral-border: #262626;
 
@@ -127,7 +139,17 @@
     --neutral-background-raised: #141414;
     --neutral-background-strong: #FAFAFA;
     --neutral-background-raised-hover: #1f1f1f;
+
+    --neutral-color-denger:#FF3B30;
+    --neutral-color-caution: #FFD700;
+    --neutral-color-verified:#00FF00;
+
     --arrow-icon-btn: #7f7f7f;
+    --neutral-background-sucess:#22C55E1A;
+    --neutral-background-error:#361200;
+
+    --neutral-border-sucess:#22C55E33;
+    --neutral-border-error:#680000;
 
     --panel: #0f1013;
     --topbar-border: #1c1f25;
@@ -229,6 +251,8 @@
   --neutral-text-textWeak: #A3A3A3;
   --neutral-text-textStrong: #FAFAFA;
   --neutral-text-placeholder: #333333;
+  --neutral-text-sucess:#22C55E;
+  --neutral-text-error:#F33838;
 
 
   --neutral-border: #262626;
@@ -239,9 +263,19 @@
   --neutral-background-strong: #FAFAFA;
 
   --neutral-background-raised-hover: #1f1f1f;
+
+  --neutral-color-denger:#FF3B30;
+  --neutral-color-caution: #FFD700;
+  --neutral-color-verified:#00FF00;
+
   --arrow-icon-btn: #7f7f7f;
 
 
+  --neutral-background-sucess:#22C55E1A;
+  --neutral-background-error:#361200;
+
+  --neutral-border-sucess:#22C55E33;
+  --neutral-border-error:#680000;
 
 
 
@@ -351,12 +385,12 @@ button {
   cursor: pointer;
 }
 
-.thin-scrollbar::-webkit-scrollbar {
-  width: 8px;
+::-webkit-scrollbar {
+  width: 5px;
 }
 
-.thin-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--arrow-icon-btn);
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-border);
   border-radius: 999px;
 }
 

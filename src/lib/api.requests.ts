@@ -7,6 +7,7 @@ import type {
   CatalogTokenResponse,
   CatalogTokensPayload,
   TokenRiskResponse,
+  UserInfoResponse,
 } from './api.types';
 
 function isApiResponseEnvelope<T>(
@@ -81,6 +82,20 @@ export async function fetchCatalogTokens(chainId: number): Promise<{
   // Legacy shape: plain array (backwards compat)
   const tokens = Array.isArray(data) ? data : [];
   return { tokens, securitySyncing: false };
+}
+
+export async function fetchUserInfo(walletAddress: string) {
+  ensureApiBaseUrlConfigured();
+  const params = new URLSearchParams({ walletAddress });
+  const response = await apiClient<
+    ApiResponseEnvelope<UserInfoResponse | null> | UserInfoResponse | null
+  >(`${BASE_URLS.USER}/info?${params.toString()}`, { cache: 'no-store' });
+
+  if (isApiResponseEnvelope<UserInfoResponse | null>(response)) {
+    return response.data;
+  }
+
+  return response;
 }
 
 const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3';

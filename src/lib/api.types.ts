@@ -1,33 +1,11 @@
-export type RiskAlertLevel = 'info' | 'warning' | 'error';
 export type RiskDecision = 'ALLOW' | 'WARN' | 'BLOCK';
-
-export type TokenRiskBadge = {
-  id: string;
-  label: string;
-  detail: string;
-  level: RiskAlertLevel;
-};
-
-export type TokenRiskMetrics = {
-  buyTaxPercent: number | null;
-  sellTaxPercent: number | null;
-  maxDexLiquidityUsd: number | null;
-  ownershipAbandoned: boolean;
-};
+export type SecurityLevel = 'verified' | 'caution' | 'danger';
 
 export type TokenRiskResponse = {
   decision: RiskDecision;
-  score: number | null;
-  flags: string[];
+  securityLevel: SecurityLevel;
   criticalFlags: string[];
-  warningFlags: string[];
-  trustSignals: string[];
   reasons: string[];
-  badges: TokenRiskBadge[];
-  metrics: TokenRiskMetrics;
-  alertLevel: RiskAlertLevel;
-  alertTitle: string;
-  alertMessage: string;
 };
 
 export type CatalogChainResponse = {
@@ -51,6 +29,13 @@ export type CatalogTokenResponse = {
 export type CatalogTokensPayload = {
   tokens: CatalogTokenResponse[];
   securitySyncing: boolean;
+};
+
+export type UserInfoResponse = {
+  isVerified?: boolean;
+  is_verified?: boolean;
+  wealthTier?: number;
+  wealth_tier?: number;
 };
 
 export type ApiResponseEnvelope<T> = {
