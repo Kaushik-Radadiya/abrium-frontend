@@ -1,9 +1,11 @@
 import { apiClient } from './api.client';
 import { BASE_URLS, ensureApiBaseUrlConfigured } from './api.constants';
+import { getChainConfig, isGoPlusSupportedChain } from './constant/goPlusChains';
 import type {
   ApiResponseEnvelope,
   CatalogChainResponse,
   CatalogTokenResponse,
+  CatalogTokensPayload,
   TokenRiskResponse,
 } from './api.types';
 
@@ -47,38 +49,41 @@ export async function fetchCatalogChains() {
   const response = await apiClient<
     ApiResponseEnvelope<CatalogChainResponse[]> | CatalogChainResponse[]
   >(`${BASE_URLS.CATALOG}/chains`, { cache: 'no-store' });
-  return unwrapResponseData(response, 'Catalog chains response was empty');
+  const chains = unwrapResponseData(response, 'Catalog chains response was empty');
+  if (!Array.isArray(chains)) return chains;
+  return chains.filter((chain) => isGoPlusSupportedChain(chain.id));
 }
 
-export async function fetchCatalogTokens(chainId: number) {
+export async function fetchCatalogTokens(chainId: number): Promise<{
+  tokens: CatalogTokenResponse[];
+  securitySyncing: boolean;
+}> {
   ensureApiBaseUrlConfigured();
   const params = new URLSearchParams({ chainId: String(chainId) });
   const response = await apiClient<
-    ApiResponseEnvelope<CatalogTokenResponse[]> | CatalogTokenResponse[]
+    | ApiResponseEnvelope<CatalogTokensPayload>
+    | ApiResponseEnvelope<CatalogTokenResponse[]>
+    | CatalogTokensPayload
+    | CatalogTokenResponse[]
   >(`${BASE_URLS.CATALOG}/tokens?${params.toString()}`, { cache: 'no-store' });
-  return unwrapResponseData(response, 'Catalog tokens response was empty');
+
+  // Unwrap envelope if present
+  const data = isApiResponseEnvelope<CatalogTokensPayload | CatalogTokenResponse[]>(response)
+    ? response.data
+    : response;
+
+  if (!data) throw new Error('Catalog tokens response was empty');
+
+  if (data && !Array.isArray(data) && 'tokens' in data) {
+    return { tokens: data.tokens, securitySyncing: data.securitySyncing ?? false };
+  }
+
+  // Legacy shape: plain array (backwards compat)
+  const tokens = Array.isArray(data) ? data : [];
+  return { tokens, securitySyncing: false };
 }
 
 const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3';
-
-const COINGECKO_PLATFORM_BY_CHAIN_ID: Record<number, string> = {
-  1: 'ethereum',
-  137: 'polygon-pos',
-  8453: 'base',
-};
-
-const GECKOTERMINAL_NETWORK_BY_CHAIN_ID: Record<number, string> = {
-  1: 'eth',
-  137: 'polygon_pos',
-  8453: 'base',
-  10: 'optimism',
-  42161: 'arbitrum',
-  56: 'bsc',
-  43114: 'avax',
-  11155111: 'eth_sepolia',
-  80002: 'polygon_pos_amoy',
-  84532: 'base_sepolia',
-};
 
 export async function fetchCoinGeckoTokenImageUrl({
   chainId,
@@ -89,7 +94,7 @@ export async function fetchCoinGeckoTokenImageUrl({
 }): Promise<string | null> {
   if (address === 'native') return null;
 
-  const network = GECKOTERMINAL_NETWORK_BY_CHAIN_ID[chainId];
+  const network = getChainConfig(chainId)?.geckoTerminalNetwork ?? null;
   if (!network) return null;
 
   try {
@@ -110,15 +115,6 @@ export async function fetchCoinGeckoTokenImageUrl({
     return null;
   }
 }
-
-const COINGECKO_NATIVE_COIN_IDS_BY_CHAIN_ID: Record<number, string[]> = {
-  1: ['ethereum'],
-  137: ['polygon-ecosystem-token', 'matic-network'],
-  8453: ['ethereum'],
-  11155111: ['ethereum'],
-  80002: ['polygon-ecosystem-token', 'matic-network'],
-  84532: ['ethereum'],
-};
 
 async function readCoinGeckoUsdValue(
   url: URL,
@@ -143,8 +139,8 @@ export async function fetchTokenUsdPrice({
   tokenAddress: string;
 }): Promise<number | null> {
   if (tokenAddress === 'native') {
-    const coinIds = COINGECKO_NATIVE_COIN_IDS_BY_CHAIN_ID[chainId];
-    if (!coinIds?.length) return null;
+    const coinIds = getChainConfig(chainId)?.nativeCoinIds ?? [];
+    if (!coinIds.length) return null;
 
     for (const coinId of coinIds) {
       const url = new URL(`${COINGECKO_API_BASE_URL}/simple/price`);
@@ -156,7 +152,7 @@ export async function fetchTokenUsdPrice({
     return null;
   }
 
-  const platform = COINGECKO_PLATFORM_BY_CHAIN_ID[chainId];
+  const platform = getChainConfig(chainId)?.coingeckoPlatform ?? null;
   if (!platform) return null;
 
   const normalizedAddress = tokenAddress.toLowerCase();

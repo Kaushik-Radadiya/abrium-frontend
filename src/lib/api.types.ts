@@ -34,8 +34,6 @@ export type CatalogChainResponse = {
   id: number;
   chainKey: string;
   name: string;
-  rpcUrls: string[];
-  explorerUrl: string;
   nativeSymbol: string;
   logoURI?: string;
   scope: 'production' | 'development';
@@ -48,6 +46,11 @@ export type CatalogTokenResponse = {
   name: string;
   decimals: number;
   logoURI?: string;
+};
+
+export type CatalogTokensPayload = {
+  tokens: CatalogTokenResponse[];
+  securitySyncing: boolean;
 };
 
 export type ApiResponseEnvelope<T> = {

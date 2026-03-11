@@ -1,7 +1,11 @@
 'use client';
 
 import { type CSSProperties, type ReactNode, useRef, useState } from 'react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 type OverflowTooltipTriggerProps = {
@@ -72,7 +76,11 @@ export function OverflowTooltipText({
           </span>
         )}
       </TooltipTrigger>
-      <TooltipContent side="top" sideOffset={2} className={cn('max-w-none font-mono text-sm', tooltipClassName)}>
+      <TooltipContent
+        side='top'
+        sideOffset={2}
+        className={cn('max-w-none font-mono text-sm', tooltipClassName)}
+      >
         {text}
       </TooltipContent>
     </Tooltip>

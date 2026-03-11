@@ -1,7 +1,7 @@
 'use client';
 
 import { type UIEvent, useCallback, useMemo, useState } from 'react';
-import { SupportedChain } from '@/lib/chains';
+import { SupportedChain, getChainKey } from '@/lib/chains';
 import { UiToken } from '@/lib/tokens';
 import { getChainIconUrl, getTokenIconUrl } from '@/lib/icons';
 import { IconWithFallback } from '@/components/swap/IconWithFallback';
@@ -53,12 +53,7 @@ const TOKENS_PAGE_SIZE = 200;
 
 function resolveChainKey(chainId: number, chainKey?: string) {
   if (chainKey) return chainKey;
-  if (chainId === 1) return 'eth';
-  if (chainId === 137) return 'pol';
-  if (chainId === 11155111) return 'ethereum';
-  if (chainId === 80002) return 'polygon';
-  if (chainId === 84532) return 'base';
-  return 'network';
+  return getChainKey(chainId) || 'network';
 }
 
 export function TokenSelectorModal({

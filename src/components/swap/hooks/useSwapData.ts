@@ -211,8 +211,8 @@ export function useSwapData({
         chain: {
           id: chain.id,
           name: chain.name,
-          rpcUrls: chain.rpcUrls ?? [],
-          explorerUrl: chain.explorerUrl ?? '',
+          rpcUrls: [],
+          explorerUrl: '',
           nativeSymbol: chain.nativeSymbol,
           scope: chain.scope,
         },
@@ -273,17 +273,24 @@ export function useSwapData({
   }, [selectedChainKey, selectedRuntimeNetwork]);
 
   const {
-    data: dynamicTokensForChain = EMPTY_TOKENS,
+    data: tokensQueryData,
     isLoading: loadingDynamicTokens,
   } = useQuery({
     queryKey: ['catalog', 'tokens', chainId],
     queryFn: async () => {
-      const tokens = await fetchCatalogTokens(chainId);
-      return dedupeTokens(tokens);
+      const { tokens, securitySyncing } = await fetchCatalogTokens(chainId);
+      return { tokens: dedupeTokens(tokens), securitySyncing };
     },
+    // When the backend is still syncing GoPlus security data in the background,
+    // recheck every 30 s so security badges appear as soon as they are ready.
+    refetchInterval: (query) =>
+      query.state.data?.securitySyncing ? 30_000 : false,
     retry: 1,
     refetchOnWindowFocus: false,
   });
+
+  const dynamicTokensForChain = tokensQueryData?.tokens ?? EMPTY_TOKENS;
+  const securitySyncing = tokensQueryData?.securitySyncing ?? false;
   const dynamicTokensCount = dynamicTokensForChain.length;
 
   const curatedTokens = useMemo(() => {
@@ -489,6 +496,7 @@ export function useSwapData({
     selectedChainIcon,
     uniqueRuntimeNetworks,
     loadingDynamicTokens,
+    securitySyncing,
     balances,
     importTokenByAddress,
   };
