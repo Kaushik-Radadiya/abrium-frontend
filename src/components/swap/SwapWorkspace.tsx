@@ -50,6 +50,7 @@ export function SwapWorkspace() {
   const [fromValueMode, setFromValueMode] = useState<'token' | 'usd'>('token');
   const [fromUsdInput, setFromUsdInput] = useState('');
   const [toValueMode, setToValueMode] = useState<'token' | 'usd'>('token');
+  const [receiveWalletAddress, setReceiveWalletAddress] = useState<string | null>(null);
 
   const {
     chainTokens: fromChainTokens,
@@ -475,6 +476,7 @@ export function SwapWorkspace() {
 
               <SwapTokenPanel
                 label='Receive'
+                onReceiveWalletChange={setReceiveWalletAddress}
                 amount={
                   toValueMode === 'usd'
                     ? formatUsd(toAmountUsdValue)

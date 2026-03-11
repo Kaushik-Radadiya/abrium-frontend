@@ -20,6 +20,7 @@ type Props = {
   loading?: boolean;
   bottomLabel?: string;
   onToggleValueDisplay?: () => void;
+  onReceiveWalletChange?: (address: string | null) => void;
 };
 
 const TOKEN_BOX_CLASS =
@@ -41,11 +42,12 @@ export function SwapTokenPanel({
   loading = false,
   bottomLabel,
   onToggleValueDisplay,
+  onReceiveWalletChange,
 }: Props) {
   return (
     <div className={TOKEN_SECTION_CLASS}>
       <div className={TOKEN_TOP_WALLET_CLASS}>
-        <WalletTrigger />
+        <WalletTrigger receiveMode={label === 'Receive'} onReceiveWalletChange={onReceiveWalletChange} />
       </div>
       <div className={TOKEN_BOX_CLASS}>
         <div className='text-[16px] leading-none text-[var(--neutral-text-textWeak)]'>

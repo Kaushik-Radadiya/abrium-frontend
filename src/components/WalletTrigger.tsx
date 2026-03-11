@@ -18,8 +18,17 @@ import {
 import { WalletIcon } from '@/components/ui/WalletIcon';
 import { cn, showAddress } from '@/lib/utils';
 
-export function WalletTrigger({ className }: { className?: string }) {
+export function WalletTrigger({
+  className,
+  receiveMode = false,
+  onReceiveWalletChange,
+}: {
+  className?: string;
+  receiveMode?: boolean;
+  onReceiveWalletChange?: (address: string | null) => void;
+}) {
   const [open, setOpen] = useState(false);
+  const [receiveWallet, setReceiveWallet] = useState<{ id: string; address: string; connector?: { metadata?: { icon?: string }; name?: string } } | null>(null);
   const { primaryWallet, setShowAuthFlow } = useDynamicContext();
   const { setShowLinkNewWalletModal } = useDynamicModals();
   const switchWallet = useSwitchWallet();
@@ -47,6 +56,9 @@ export function WalletTrigger({ className }: { className?: string }) {
     ).values(),
   );
 
+  const displayWallet = receiveMode && receiveWallet ? receiveWallet : primaryWallet;
+  const activeId = receiveMode ? (receiveWallet?.id ?? primaryWallet.id) : primaryWallet.id;
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -62,13 +74,13 @@ export function WalletTrigger({ className }: { className?: string }) {
           <span className="flex items-center gap-2">
             <span className="grid size-[18px] place-items-center">
               <WalletIcon
-                icon={primaryWallet.connector?.metadata?.icon}
-                label={primaryWallet.connector?.name || 'Wallet'}
+                icon={displayWallet.connector?.metadata?.icon}
+                label={displayWallet.connector?.name || 'Wallet'}
                 className="bg-transparent"
               />
             </span>
             <span className="text-xs font-medium font-mono text-[var(--neutral-text-textWeak)]">
-              {showAddress(primaryWallet.address)}
+              {showAddress(displayWallet.address)}
             </span>
           </span>
           <ChevronDown
@@ -91,11 +103,23 @@ export function WalletTrigger({ className }: { className?: string }) {
               key={wallet.id}
               className={cn(
                 'cursor-pointer rounded-xl border px-3 py-2.5 text-left hover:bg-[var(--neutral-background-hover)] focus:bg-[var(--neutral-background-hover)]',
-                wallet.id === primaryWallet.id
+                wallet.id === activeId
                   ? 'border-[var(--neutral-border)] bg-[var(--neutral-background)]'
                   : 'border-[var(--neutral-border)] bg-[var(--neutral-background-raised)]',
               )}
               onSelect={async () => {
+                if (receiveMode) {
+                  const next = wallet.id === primaryWallet.id ? null : {
+                    id: wallet.id,
+                    address: wallet.address,
+                    connector: wallet.connector,
+                  };
+                  setReceiveWallet(next);
+                  onReceiveWalletChange?.(next?.address ?? null);
+                  setOpen(false);
+                  return;
+                }
+
                 if (wallet.id === primaryWallet.id) {
                   setOpen(false);
                   return;
