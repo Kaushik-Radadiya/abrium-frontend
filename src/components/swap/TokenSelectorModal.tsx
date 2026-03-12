@@ -46,7 +46,6 @@ type Props = {
   networks: RuntimeNetwork[];
   onChainSelect: (chainId: number) => void;
   tokens: UiToken[];
-  balances: Record<string, string>;
   onSelectToken: (address: string) => void;
   loadingDynamicTokens: boolean;
   showImportOption: boolean;
@@ -94,7 +93,6 @@ export function TokenSelectorModal({
   networks,
   onChainSelect,
   tokens,
-  balances,
   onSelectToken,
   loadingDynamicTokens,
   showImportOption,
@@ -209,14 +207,6 @@ export function TokenSelectorModal({
                   </div>
                 ))}
               </div>
-              <div className='flex mt-2 items-center justify-between border-t border-(--neutral-border) text-sm px-3 py-1'>
-                <div className='text-(--neutral-text-textWeak)'>
-                  Current balance
-                </div>
-                <div className={`${MUTED_CLASS} shrink-0`}>
-                  {displayBalance(balances[token.address.toLowerCase()])}
-                </div>
-              </div>
               <div className='flex items-center justify-between text-sm px-3 py-1'>
                 <div className='text-(--neutral-text-textWeak)'>Risk badge</div>
                 {token.securityLevel ? (
@@ -245,7 +235,6 @@ export function TokenSelectorModal({
         );
       }),
     [
-      balances,
       onSelectToken,
       selectedChainIcon,
       selectedChainKey,

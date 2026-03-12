@@ -56,7 +56,8 @@ export function SwapWorkspace() {
   const [showDangerModal, setShowDangerModal] = useState(false);
   const [dangerProceedAccepted, setDangerProceedAccepted] = useState(false);
   const [hasReviewedQuote, setHasReviewedQuote] = useState(false);
-  const [receiveWalletSelection, setReceiveWalletSelection] = useState<WalletSelection | null>(null);
+  const [receiveWalletSelection, setReceiveWalletSelection] =
+    useState<WalletSelection | null>(null);
   const receiveWalletAddress = receiveWalletSelection?.address ?? null;
 
   const {
@@ -452,22 +453,21 @@ export function SwapWorkspace() {
 
   const onModalChainSelect = useCallback(
     (nextChainId: number) => {
+      setQuery('');
+      setImportError(null);
       if (selectorTarget === 'from') setFromChainId(nextChainId);
       if (selectorTarget === 'to') setToChainId(nextChainId);
     },
     [selectorTarget],
   );
 
-  const openSelector = useCallback(
-    (target: Exclude<SelectorTarget, null>) => {
-      setHasReviewedQuote(false);
-      setQuery('');
-      setImportError(null);
-      setNetworkMenuOpen(false);
-      setSelectorTarget(target);
-    },
-    [],
-  );
+  const openSelector = useCallback((target: Exclude<SelectorTarget, null>) => {
+    setHasReviewedQuote(false);
+    setQuery('');
+    setImportError(null);
+    setNetworkMenuOpen(false);
+    setSelectorTarget(target);
+  }, []);
 
   const isSelectorOpen = Boolean(selectorTarget);
   return (
@@ -503,7 +503,11 @@ export function SwapWorkspace() {
                     : undefined
                 }
                 onToggleValueDisplay={onToggleFromValueMode}
-                balance={selectedFromToken ? fromBalances[selectedFromToken.address.toLowerCase()] : undefined}
+                balance={
+                  selectedFromToken
+                    ? fromBalances[selectedFromToken.address.toLowerCase()]
+                    : undefined
+                }
               />
 
               <Button
@@ -537,7 +541,11 @@ export function SwapWorkspace() {
                 loading={isQuoteFetching && shouldShowQuote}
                 riskLevel={receiveRiskLevel}
                 animateRiskBorder={Boolean(receiveRiskLevel)}
-                balance={selectedToToken ? toBalances[selectedToToken.address.toLowerCase()] : undefined}
+                balance={
+                  selectedToToken
+                    ? toBalances[selectedToToken.address.toLowerCase()]
+                    : undefined
+                }
               />
             </div>
 
@@ -616,7 +624,6 @@ export function SwapWorkspace() {
               networks={runtimeNetworks}
               onChainSelect={onModalChainSelect}
               tokens={filteredTokens}
-              balances={activeBalances}
               onSelectToken={onSelectToken}
               loadingDynamicTokens={activeLoadingDynamicTokens}
               showImportOption={showImportOption}
