@@ -5,7 +5,6 @@ import {
   EyeIcon,
   EyeOffIcon,
   ShieldCheck,
-  CircleUserRound,
 } from 'lucide-react';
 import {
   useDynamicContext,
@@ -14,6 +13,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { useUserInfoQuery } from '@/components/swap/hooks/useSwapQuote';
 import { ShimmerImage } from '@/components/ui/ShimmerImage';
+import Image from 'next/image';
 
 export function WalletConnectCard() {
   const {
@@ -75,7 +75,7 @@ export function WalletConnectCard() {
       onClick={() =>
         primaryWallet ? setShowDynamicUserProfile(true) : setShowAuthFlow(true)
       }
-      className={`text-sm! items-center p-0 justify-between ${address ? '' : !address && user ? 'bg-[#2A2B31]!' : '!bg-[var(--neutral-background-strong)]'}`}
+      className={`text-sm! items-center p-0 justify-between ${address || user ? '' : '!bg-[var(--neutral-background-strong)]'}`}
     >
       {address ? (
         <span className='relative grid place-items-center'>
@@ -97,9 +97,11 @@ export function WalletConnectCard() {
           )}
         </span>
       ) : user ? (
-        <CircleUserRound
-          size={24}
-          className='text-(--neutral-text-textStrong)'
+        <Image
+          src='/assets/guest-user.svg'
+          width={26}
+          height={26}
+          alt='Guest User'
         />
       ) : null}
 
