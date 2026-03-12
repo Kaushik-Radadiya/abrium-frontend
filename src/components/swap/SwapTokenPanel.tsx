@@ -7,6 +7,7 @@ import { WalletTrigger } from '@/components/WalletTrigger';
 import { formatApproxUsd } from '@/lib/formatAmount';
 import { OverflowTooltipText } from '@/components/ui/OverflowTooltipText';
 import type { SecurityLevel } from '@/lib/api';
+import type { WalletSelection } from '@/lib/receive-wallet';
 
 type Props = {
   label: string;
@@ -21,7 +22,8 @@ type Props = {
   loading?: boolean;
   bottomLabel?: string;
   onToggleValueDisplay?: () => void;
-  onReceiveWalletChange?: (address: string | null) => void;
+  onReceiveWalletChange?: (selection: WalletSelection | null) => void;
+  receiveWalletSelection?: WalletSelection | null;
   riskLevel?: SecurityLevel | null;
   animateRiskBorder?: boolean;
   balance?: string;
@@ -47,6 +49,7 @@ export function SwapTokenPanel({
   bottomLabel,
   onToggleValueDisplay,
   onReceiveWalletChange,
+  receiveWalletSelection,
   riskLevel = null,
   animateRiskBorder = false,
   balance,
@@ -57,6 +60,7 @@ export function SwapTokenPanel({
         <WalletTrigger
           receiveMode={label === 'Receive'}
           onReceiveWalletChange={onReceiveWalletChange}
+          receiveWalletSelection={receiveWalletSelection}
         />
       </div>
       <div className={TOKEN_BOX_CLASS}>

@@ -28,15 +28,17 @@ export function WalletTrigger({
   className,
   receiveMode = false,
   onReceiveWalletChange,
+  receiveWalletSelection,
 }: {
   className?: string;
   receiveMode?: boolean;
-  onReceiveWalletChange?: (address: string | null) => void;
+  onReceiveWalletChange?: (selection: WalletSelection | null) => void;
+  receiveWalletSelection?: WalletSelection | null;
 }) {
   const [open, setOpen] = useState(false);
   const [isPasteDialogOpen, setIsPasteDialogOpen] = useState(false);
   const [receiveWallet, setReceiveWallet] = useState<WalletSelection | null>(
-    null,
+    receiveWalletSelection ?? null,
   );
   const [recentAddresses, setRecentAddresses] = useState<string[]>(
     readRecentReceiveAddresses,
@@ -84,7 +86,7 @@ export function WalletTrigger({
 
   const selectReceiveWallet = (next: WalletSelection | null) => {
     setReceiveWallet(next);
-    onReceiveWalletChange?.(next?.address ?? null);
+    onReceiveWalletChange?.(next);
     setOpen(false);
   };
 

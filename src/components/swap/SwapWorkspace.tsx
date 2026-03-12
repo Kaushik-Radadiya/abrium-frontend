@@ -29,6 +29,7 @@ import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatUsd } from '@/lib/formatAmount';
 import type { SecurityLevel } from '@/lib/api';
+import type { WalletSelection } from '@/lib/receive-wallet';
 import { cn } from '@/lib/utils';
 
 type SelectorTarget = 'from' | 'to' | null;
@@ -55,7 +56,8 @@ export function SwapWorkspace() {
   const [showDangerModal, setShowDangerModal] = useState(false);
   const [dangerProceedAccepted, setDangerProceedAccepted] = useState(false);
   const [hasReviewedQuote, setHasReviewedQuote] = useState(false);
-  const [receiveWalletAddress, setReceiveWalletAddress] = useState<string | null>(null);
+  const [receiveWalletSelection, setReceiveWalletSelection] = useState<WalletSelection | null>(null);
+  const receiveWalletAddress = receiveWalletSelection?.address ?? null;
 
   const {
     chainTokens: fromChainTokens,
@@ -530,7 +532,8 @@ export function SwapWorkspace() {
                     : undefined
                 }
                 onToggleValueDisplay={selectedToToken && onToggleToValueMode}
-                onReceiveWalletChange={setReceiveWalletAddress}
+                onReceiveWalletChange={setReceiveWalletSelection}
+                receiveWalletSelection={receiveWalletSelection}
                 loading={isQuoteFetching && shouldShowQuote}
                 riskLevel={receiveRiskLevel}
                 animateRiskBorder={Boolean(receiveRiskLevel)}
