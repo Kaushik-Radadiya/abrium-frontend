@@ -96,6 +96,7 @@ function sumUsdStrings(values: Array<string | undefined>): number {
 function mapSdkQuote(
   step: LiFiStep | Step,
   swapper: string,
+  recipient: string,
 ): SwapQuoteResponsePayload {
   const gasCosts = step.estimate?.gasCosts ?? [];
   const gasFeeUSDNumber = sumUsdStrings(gasCosts.map((c) => c.amountUSD));
@@ -138,7 +139,7 @@ function mapSdkQuote(
       amount: toAmount,
       token: step.action.toToken.address,
       chainId: step.action.toChainId,
-      recipient: step.action.toAddress ?? swapper,
+      recipient: step.action.toAddress ?? recipient,
     },
     slippage:
       typeof step.action.slippage === 'number'
@@ -157,7 +158,7 @@ function mapSdkQuote(
       {
         amount: toAmount,
         token: step.action.toToken.address,
-        recipient: step.action.toAddress ?? swapper,
+        recipient: step.action.toAddress ?? recipient,
         bps: 10_000,
         minAmount: toAmountMin,
       },
@@ -174,6 +175,7 @@ export async function fetchSwapQuote(
   payload: SwapQuoteRequestPayload,
 ): Promise<SwapQuoteResponsePayload> {
   const slippage = normalizeSlippage(payload.slippage);
+  const recipient = payload.recipient ?? payload.swapper;
 
   try {
     const step = await getQuote({
@@ -183,11 +185,11 @@ export async function fetchSwapQuote(
       toToken: toApiTokenAddress(payload.tokenOut),
       fromAmount: payload.amount,
       fromAddress: payload.swapper,
-      toAddress: payload.swapper,
+      toAddress: recipient,
       ...(slippage !== undefined ? { slippage } : {}),
     });
 
-    return mapSdkQuote(step, payload.swapper);
+    return mapSdkQuote(step, payload.swapper, recipient);
   } catch (err) {
     if (isHttpError(err)) {
       await err.buildAdditionalDetails?.().catch(() => {});

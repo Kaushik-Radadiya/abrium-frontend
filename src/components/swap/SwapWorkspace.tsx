@@ -212,6 +212,7 @@ export function SwapWorkspace() {
     }
     return {
       amount: quoteAmount,
+      recipient: receiveWalletAddress ?? normalizedSwapper,
       swapper: normalizedSwapper,
       tokenIn: selectedFromToken.address,
       tokenInChainId: fromChainId,
@@ -224,6 +225,7 @@ export function SwapWorkspace() {
     hasReviewed,
     normalizedSwapper,
     quoteAmount,
+    receiveWalletAddress,
     selectedFromToken,
     selectedToToken,
     toChainId,

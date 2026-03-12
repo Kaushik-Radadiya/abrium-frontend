@@ -1,6 +1,7 @@
 export type SwapQuoteRequestPayload = {
   amount: string;
   swapper: string;
+  recipient?: string;
   tokenIn: string;
   tokenInChainId: number;
   tokenOut: string;
