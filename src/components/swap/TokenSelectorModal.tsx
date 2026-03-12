@@ -73,11 +73,11 @@ function getSecurityBadgeClassName(level?: SecurityLevel | null) {
   }
 
   if (level === 'danger') {
-    return 'border-[var(--neutral-border-error)] bg-[color:color-mix(in_srgb,var(--neutral-background-error)_16%,transparent)] text-[var(--neutral-text-error)]';
+    return 'border-[var(--neutral-border-error)] bg-[color:color-mix(in_srgb,var(--neutral-background-error)_16%,transparent)] text-[var(--neutral-color-danger)]';
   }
 
   if (level === 'caution') {
-    return 'border-[var(--alert-warning-border)] bg-[var(--alert-warning-bg)] text-[var(--alert-warning-text)]';
+    return 'border-[var(--alert-warning-border)] bg-[var(--alert-warning-bg)] text-[var(--neutral-color-caution)]';
   }
 }
 
@@ -234,12 +234,7 @@ export function TokenSelectorModal({
           </Tooltip>
         );
       }),
-    [
-      onSelectToken,
-      selectedChainIcon,
-      selectedChainKey,
-      visibleTokens,
-    ],
+    [onSelectToken, selectedChainIcon, selectedChainKey, visibleTokens],
   );
 
   const onTokenListScroll = useCallback(

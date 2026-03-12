@@ -589,14 +589,14 @@ export function SwapWorkspace() {
               disabled={
                 primaryWallet
                   ? !hasTokenSelection ||
-                    isCheckingRisk ||
+                    isQuoteFetching ||
                     Boolean(quoteErrorMessage)
                   : false
               }
             >
               {primaryWallet || user
-                ? isCheckingRisk
-                  ? 'Checking risk...'
+                ? isQuoteFetching
+                  ? 'Fetching Quote...'
                   : quoteErrorMessage
                     ? 'No Route Available'
                     : 'Review Swap'

@@ -24,8 +24,8 @@ export const TRANSACTION_DEADLINE_OPTIONS = [
   { label: '30 min', value: '30' },
 ];
 
-export const CHANGE_POSITIVE_CLASS = 'text-[#22C55E]';
-export const CHANGE_NEGATIVE_CLASS = 'text-[#EF4444]';
+export const CHANGE_POSITIVE_CLASS = 'text-[#00ff00b3]';
+export const CHANGE_NEGATIVE_CLASS = 'text-[#ff3b30b3]';
 
 export type PerformanceRow = {
   label: string;
