@@ -1,6 +1,7 @@
 'use client';
 
 import { type UIEvent, useCallback, useMemo, useState } from 'react';
+import moment from 'moment';
 import { SupportedChain, getChainKey } from '@/lib/chains';
 import { UiToken } from '@/lib/tokens';
 import { getChainIconUrl, getTokenIconUrl } from '@/lib/icons';
@@ -24,7 +25,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { cn, showAddress } from '@/lib/utils';
+import { cn, formatSecurityUpdatedAt, showAddress } from '@/lib/utils';
+import type { SecurityLevel } from '@/lib/api';
 
 type RuntimeNetwork = {
   chain: SupportedChain;
@@ -64,6 +66,20 @@ const TOKENS_PAGE_SIZE = 200;
 function resolveChainKey(chainId: number, chainKey?: string) {
   if (chainKey) return chainKey;
   return getChainKey(chainId) || 'network';
+}
+
+function getSecurityBadgeClassName(level?: SecurityLevel | null) {
+  if (level === 'verified') {
+    return 'border-[var(--neutral-border-sucess)] bg-[color:color-mix(in_srgb,var(--neutral-background-sucess)_16%,transparent)] text-[var(--neutral-text-sucess)]';
+  }
+
+  if (level === 'danger') {
+    return 'border-[var(--neutral-border-error)] bg-[color:color-mix(in_srgb,var(--neutral-background-error)_16%,transparent)] text-[var(--neutral-text-error)]';
+  }
+
+  if (level === 'caution') {
+    return 'border-[var(--alert-warning-border)] bg-[var(--alert-warning-bg)] text-[var(--alert-warning-text)]';
+  }
 }
 
 export function TokenSelectorModal({
@@ -107,7 +123,7 @@ export function TokenSelectorModal({
     () =>
       visibleTokens.map((token) => {
         const performanceRows = buildTokenPerformanceRows(token);
-        
+
         return (
           <Tooltip key={`tooltip-${token.address}`}>
             <TooltipTrigger asChild>
@@ -203,8 +219,25 @@ export function TokenSelectorModal({
               </div>
               <div className='flex items-center justify-between text-sm px-3 py-1'>
                 <div className='text-(--neutral-text-textWeak)'>Risk badge</div>
-                <div className={`${MUTED_CLASS} shrink-0`}>
-                  {displayBalance(balances[token.address.toLowerCase()])}
+                {token.securityLevel ? (
+                  <div
+                    className={cn(
+                      'rounded-full border px-2 py-0.5 text-xs font-medium capitalize',
+                      getSecurityBadgeClassName(token.securityLevel),
+                    )}
+                  >
+                    {token.securityLevel}
+                  </div>
+                ) : (
+                  <div className={MUTED_CLASS}>--</div>
+                )}
+              </div>
+              <div className='flex items-center justify-between text-sm px-3 py-1'>
+                <div className='text-(--neutral-text-textWeak)'>
+                  Last synced
+                </div>
+                <div className='text-[10px] uppercase text-[var(--neutral-text-textWeak)] text-right'>
+                  {formatSecurityUpdatedAt(token.securityUpdatedAt)}
                 </div>
               </div>
             </TooltipContent>

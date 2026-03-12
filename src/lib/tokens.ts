@@ -1,4 +1,5 @@
 import { SUPPORTED_CHAINS } from '@/lib/chains'
+import { SecurityLevel } from './api.types'
 
 export type UiToken = {
   chainId: number
@@ -12,6 +13,8 @@ export type UiToken = {
   priceChange24hPercent?: number | null
   priceChange7dPercent?: number | null
   apy?: number | null
+  securityLevel?: SecurityLevel | null
+  securityUpdatedAt?: string | null
 }
 
 export const CURATED_TOKENS: UiToken[] = [
