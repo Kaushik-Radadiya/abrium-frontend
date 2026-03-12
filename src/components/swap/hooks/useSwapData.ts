@@ -18,7 +18,6 @@ import {
 } from '@/lib/api.requests';
 import { getChainIconUrl } from '@/lib/icons';
 import { dedupeTokens } from '@/components/swap/utils';
-import { formatBalance } from '@/lib/formatAmount';
 
 type RuntimeNetwork = {
   chain: SupportedChain;
@@ -81,9 +80,7 @@ async function fetchBalancesForTokens(params: {
         address: params.walletAddress,
       });
       for (const token of nativeTokens) {
-        next[token.address.toLowerCase()] = formatBalance(
-          formatUnits(rawNativeBalance, token.decimals),
-        );
+        next[token.address.toLowerCase()] = formatUnits(rawNativeBalance, token.decimals);
       }
     } catch {}
   }
@@ -113,9 +110,7 @@ async function fetchBalancesForTokens(params: {
           typeof result.result === 'bigint'
             ? result.result
             : BigInt(result.result);
-        next[token.address.toLowerCase()] = formatBalance(
-          formatUnits(rawBalance, token.decimals),
-        );
+        next[token.address.toLowerCase()] = formatUnits(rawBalance, token.decimals);
       });
     } catch {}
   }

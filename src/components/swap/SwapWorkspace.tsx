@@ -123,25 +123,23 @@ export function SwapWorkspace() {
   );
 
   const hasTokenSelection = Boolean(selectedFromToken && selectedToToken);
-  const skipsRiskReview = selectedToToken?.address === 'native';
 
   const hasBlockingRisk = useMemo(
-    () => !skipsRiskReview && Boolean(risk && risk.securityLevel === 'danger'),
-    [risk, skipsRiskReview],
+    () => Boolean(risk && risk.securityLevel === 'danger'),
+    [risk],
   );
 
   const shouldEnforceDangerGuard = hasBlockingRisk && !dangerProceedAccepted;
 
   const receiveRiskLevel = useMemo<SecurityLevel | null>(() => {
-    if (skipsRiskReview) return null;
     if (riskError) return 'caution';
     if (!risk) return null;
     return risk.securityLevel;
-  }, [risk, riskError, skipsRiskReview]);
+  }, [risk, riskError]);
 
   const hasReviewed = useMemo(
-    () => skipsRiskReview || Boolean(risk),
-    [risk, skipsRiskReview],
+    () => Boolean(risk),
+    [risk],
   );
 
   // Token selector modal context
@@ -373,7 +371,7 @@ export function SwapWorkspace() {
       setQuery('');
       setImportError(null);
 
-      if (selectorTarget !== 'to' || address === 'native') return;
+      if (selectorTarget !== 'to') return;
 
       try {
         await checkTokenRisk({

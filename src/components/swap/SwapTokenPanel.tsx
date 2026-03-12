@@ -4,7 +4,7 @@ import { ArrowDownUp } from 'lucide-react';
 import type { UiToken } from '@/lib/tokens';
 import { TokenPill } from '@/components/swap/TokenPill';
 import { WalletTrigger } from '@/components/WalletTrigger';
-import { formatApproxUsd } from '@/lib/formatAmount';
+import { formatApproxUsd, formatBalance } from '@/lib/formatAmount';
 import { OverflowTooltipText } from '@/components/ui/OverflowTooltipText';
 import type { SecurityLevel } from '@/lib/api';
 import type { WalletSelection } from '@/lib/receive-wallet';
@@ -70,7 +70,7 @@ export function SwapTokenPanel({
           </div>
           {balance !== undefined && (
             <div className='text-xs  text-(--neutral-text-textWeak)'>
-              Balance: <span className='text-(--neutral-text)'>{balance}{token ? ` ${token.symbol}` : ''}</span>
+              Balance: <span className='text-(--neutral-text)'>{formatBalance(balance)}{token ? ` ${token.symbol}` : ''}</span>
             </div>
           )}
         </div>
