@@ -24,6 +24,7 @@ type Props = {
   onReceiveWalletChange?: (address: string | null) => void;
   riskLevel?: SecurityLevel | null;
   animateRiskBorder?: boolean;
+  balance?: string;
 };
 
 const TOKEN_BOX_CLASS =
@@ -48,6 +49,7 @@ export function SwapTokenPanel({
   onReceiveWalletChange,
   riskLevel = null,
   animateRiskBorder = false,
+  balance,
 }: Props) {
   return (
     <div className={TOKEN_SECTION_CLASS}>
@@ -63,7 +65,7 @@ export function SwapTokenPanel({
             {label}
           </div>
           <div className='text-xs  text-[var(--neutral-text-textWeak)]'>
-            Balance: <span className='text-(--neutral-text)'>0.00</span>
+            Balance: <span className='text-(--neutral-text)'>{balance ?? '0.00'}{token ? ` ${token.symbol}` : ''}</span>
           </div>
         </div>
         <div className='grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3'>

@@ -44,13 +44,14 @@ export function SecurityRiskModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className='px-4'>
+        <ul className='px-4 py-2 flex flex-col gap-1'>
           {resolvedReasons.map((reason) => (
-            <span key={reason} className='text-sm text-(--neutral-text)'>
-              {reason}{' '}
-            </span>
+            <li key={reason} className='flex items-start gap-2 text-sm text-(--neutral-text)'>
+              <span className='mt-1.5 size-1.5 shrink-0 rounded-full bg-(--neutral-text-textWeak)' />
+              {reason}
+            </li>
           ))}
-        </div>
+        </ul>
 
         <div className='grid grid-cols-2 gap-2 border-t border-(--neutral-border) p-4'>
           <Button

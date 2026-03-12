@@ -55,6 +55,7 @@ export function SwapWorkspace() {
   const [showDangerModal, setShowDangerModal] = useState(false);
   const [dangerProceedAccepted, setDangerProceedAccepted] = useState(false);
   const [hasReviewedQuote, setHasReviewedQuote] = useState(false);
+  const [receiveWalletAddress, setReceiveWalletAddress] = useState<string | null>(null);
 
   const {
     chainTokens: fromChainTokens,
@@ -70,7 +71,6 @@ export function SwapWorkspace() {
     walletAddress,
     selectedFromToken: fromToken,
     selectedToToken: fromToken,
-    loadAllTokenBalances: selectorTarget === 'from',
   });
 
   const {
@@ -84,10 +84,9 @@ export function SwapWorkspace() {
   } = useSwapData({
     chainId: toChainId,
     staticChains: SUPPORTED_CHAINS,
-    walletAddress,
+    walletAddress: receiveWalletAddress ?? walletAddress,
     selectedFromToken: toToken || undefined,
     selectedToToken: toToken || undefined,
-    loadAllTokenBalances: selectorTarget === 'to',
   });
 
   const {
@@ -343,7 +342,8 @@ export function SwapWorkspace() {
 
   const onSelectToken = useCallback(
     async (address: string) => {
-      clearRiskState();
+      // Risk data is tied to the "to" token — only clear it when that changes.
+      if (selectorTarget === 'to') clearRiskState();
       setHasReviewedQuote(false);
 
       if (selectorTarget === 'from') {
@@ -396,8 +396,8 @@ export function SwapWorkspace() {
     setImportError(null);
     try {
       const checksummedAddress = getAddress(importAddress);
-      await activeImportTokenByAddress(checksummedAddress);
-      await onSelectToken(checksummedAddress);
+      const imported = await activeImportTokenByAddress(checksummedAddress);
+      await onSelectToken(imported.address);
     } catch (err) {
       setImportError(
         err instanceof Error && err.message
@@ -456,14 +456,13 @@ export function SwapWorkspace() {
 
   const openSelector = useCallback(
     (target: Exclude<SelectorTarget, null>) => {
-      clearRiskState();
       setHasReviewedQuote(false);
       setQuery('');
       setImportError(null);
       setNetworkMenuOpen(false);
       setSelectorTarget(target);
     },
-    [clearRiskState],
+    [],
   );
 
   const isSelectorOpen = Boolean(selectorTarget);
@@ -500,6 +499,7 @@ export function SwapWorkspace() {
                     : undefined
                 }
                 onToggleValueDisplay={onToggleFromValueMode}
+                balance={selectedFromToken ? fromBalances[selectedFromToken.address.toLowerCase()] : undefined}
               />
 
               <Button
@@ -528,9 +528,11 @@ export function SwapWorkspace() {
                     : undefined
                 }
                 onToggleValueDisplay={selectedToToken && onToggleToValueMode}
+                onReceiveWalletChange={setReceiveWalletAddress}
                 loading={isQuoteFetching && shouldShowQuote}
                 riskLevel={receiveRiskLevel}
                 animateRiskBorder={Boolean(receiveRiskLevel)}
+                balance={selectedToToken ? toBalances[selectedToToken.address.toLowerCase()] : undefined}
               />
             </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createPublicClient,
   erc20Abi,
@@ -14,13 +14,11 @@ import { listTokensForChain, UiToken } from '@/lib/tokens';
 import {
   fetchCatalogChains,
   fetchCatalogTokens,
-  fetchCoinGeckoTokenImageUrl,
+  importCatalogToken,
 } from '@/lib/api.requests';
 import { getChainIconUrl } from '@/lib/icons';
 import { dedupeTokens } from '@/components/swap/utils';
 import { formatBalance } from '@/lib/formatAmount';
-
-type ImportedState = Record<number, UiToken[]>;
 
 type RuntimeNetwork = {
   chain: SupportedChain;
@@ -34,92 +32,38 @@ type Params = {
   walletAddress?: string;
   selectedFromToken?: string;
   selectedToToken?: string;
-  loadAllTokenBalances?: boolean;
 };
 
-const IMPORT_CACHE_KEY = 'abrium.imported.tokens.v1';
 const BALANCE_REFRESH_MS = 30_000;
 const MULTICALL_CHUNK_SIZE = 100;
-const TOKEN_NOT_FOUND_IMPORT_ERROR =
-  'Token not found or invalid token address.';
-const TOKEN_LOOKUP_UNAVAILABLE_ERROR =
-  'Token lookup is temporarily unavailable.';
 const EMPTY_TOKENS: UiToken[] = [];
 const EMPTY_RUNTIME_NETWORKS: RuntimeNetwork[] = [];
-const IMPORT_LOOKUP_UNAVAILABLE_PRIORITY_FRAGMENTS = [
-  'no rpc network configured',
-] as const;
-const IMPORT_TOKEN_NOT_FOUND_FRAGMENTS = [
-  'returned no data',
-  'address is not a contract',
-  'invalid address',
-  'execution reverted',
-  'does not have the function',
-  'decimals',
-  'symbol',
-  'name',
-] as const;
-const IMPORT_LOOKUP_UNAVAILABLE_FRAGMENTS = [
-  'timeout',
-  'network',
-  'fetch',
-  '429',
-  'rate limit',
-] as const;
 
-function createChainClient(rpcUrl: string) {
+// Multicall3 is deployed at the same address on all major EVM chains.
+const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
+
+function createChainClient(rpcUrl: string, chainId: number) {
   return createPublicClient({
+    chain: {
+      id: chainId,
+      name: 'EVM',
+      nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+      rpcUrls: { default: { http: [rpcUrl] } },
+      contracts: {
+        multicall3: { address: MULTICALL3_ADDRESS },
+      },
+    },
     transport: http(rpcUrl),
   });
 }
 
-function readLocalStorageJson<T>(key: string): T | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(key);
-  if (!raw) return null;
-
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
-}
-
-function readImportedTokensCache() {
-  return readLocalStorageJson<ImportedState>(IMPORT_CACHE_KEY) ?? {};
-}
-
-function includesAnyFragment(value: string, fragments: readonly string[]) {
-  return fragments.some((fragment) => value.includes(fragment));
-}
-
-function normalizeImportTokenError(rawMessage?: string) {
-  const message = rawMessage?.trim().toLowerCase();
-  if (!message) return TOKEN_NOT_FOUND_IMPORT_ERROR;
-
-  if (
-    includesAnyFragment(message, IMPORT_LOOKUP_UNAVAILABLE_PRIORITY_FRAGMENTS)
-  ) {
-    return TOKEN_LOOKUP_UNAVAILABLE_ERROR;
-  }
-
-  if (includesAnyFragment(message, IMPORT_TOKEN_NOT_FOUND_FRAGMENTS)) {
-    return TOKEN_NOT_FOUND_IMPORT_ERROR;
-  }
-
-  if (includesAnyFragment(message, IMPORT_LOOKUP_UNAVAILABLE_FRAGMENTS)) {
-    return TOKEN_LOOKUP_UNAVAILABLE_ERROR;
-  }
-
-  return TOKEN_NOT_FOUND_IMPORT_ERROR;
-}
-
 async function fetchBalancesForTokens(params: {
   rpcUrl: string;
+  chainId: number;
   walletAddress: `0x${string}`;
   tokens: UiToken[];
 }) {
-  const client = createChainClient(params.rpcUrl);
+  const client = createChainClient(params.rpcUrl, params.chainId);
   const next: Record<string, string> = Object.fromEntries(
     params.tokens.map((token) => [token.address.toLowerCase(), '0']),
   );
@@ -185,23 +129,16 @@ export function useSwapData({
   walletAddress,
   selectedFromToken,
   selectedToToken,
-  loadAllTokenBalances = false,
 }: Params) {
-  const [importedByChain, setImportedByChain] = useState<ImportedState>(
-    readImportedTokensCache,
-  );
-  const [balances, setBalances] = useState<Record<string, string>>({});
+  const queryClient = useQueryClient();
+  // Keyed by walletAddress then chainId — wallet change automatically scopes
+  // balances without needing an explicit cache-clear effect.
+  const [balancesByWalletChain, setBalancesByWalletChain] = useState<
+    Record<string, Record<number, Record<string, string>>>
+  >({});
   const [preferredRpcByChain, setPreferredRpcByChain] = useState<
     Record<number, string>
   >({});
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(
-      IMPORT_CACHE_KEY,
-      JSON.stringify(importedByChain),
-    );
-  }, [importedByChain]);
 
   const { data: dynamicRuntimeNetworks = EMPTY_RUNTIME_NETWORKS } = useQuery({
     queryKey: ['catalog', 'networks'],
@@ -272,10 +209,7 @@ export function useSwapData({
     return getChainIconUrl(selectedChainKey);
   }, [selectedChainKey, selectedRuntimeNetwork]);
 
-  const {
-    data: tokensQueryData,
-    isLoading: loadingDynamicTokens,
-  } = useQuery({
+  const { data: tokensQueryData, isLoading: loadingDynamicTokens } = useQuery({
     queryKey: ['catalog', 'tokens', chainId],
     queryFn: async () => {
       const { tokens, securitySyncing } = await fetchCatalogTokens(chainId);
@@ -293,24 +227,12 @@ export function useSwapData({
   const securitySyncing = tokensQueryData?.securitySyncing ?? false;
   const dynamicTokensCount = dynamicTokensForChain.length;
 
-  const curatedTokens = useMemo(() => {
+  const chainTokens = useMemo(() => {
     if (dynamicTokensCount > 0) return dynamicTokensForChain;
     return listTokensForChain(chainId);
   }, [chainId, dynamicTokensCount, dynamicTokensForChain]);
 
-  const importedTokens = useMemo(
-    () => importedByChain[chainId] ?? EMPTY_TOKENS,
-    [importedByChain, chainId],
-  );
-
-  const chainTokens = useMemo(
-    () => dedupeTokens([...curatedTokens, ...importedTokens]),
-    [curatedTokens, importedTokens],
-  );
-
   const trackedBalanceTokens = useMemo(() => {
-    if (loadAllTokenBalances) return chainTokens;
-
     const byAddress = new Map(
       chainTokens.map((token) => [token.address.toLowerCase(), token] as const),
     );
@@ -325,27 +247,22 @@ export function useSwapData({
     return trackedAddresses
       .map((address) => byAddress.get(address))
       .filter((token): token is UiToken => Boolean(token));
-  }, [chainTokens, loadAllTokenBalances, selectedFromToken, selectedToToken]);
+  }, [chainTokens, selectedFromToken, selectedToToken]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadBalances() {
-      if (!walletAddress || !isAddress(walletAddress)) {
-        if (!cancelled) setBalances({});
-        return;
-      }
+      if (!walletAddress || !isAddress(walletAddress)) return;
 
-      if (trackedBalanceTokens.length === 0) {
-        if (!cancelled) setBalances({});
-        return;
-      }
+      // Tokens may still be loading for this chain — don't clear cache, just wait
+      if (trackedBalanceTokens.length === 0) return;
 
       if (orderedRpcUrls.length === 0) return;
 
       let activeRpcUrl: string | null = null;
       for (const rpcUrl of orderedRpcUrls) {
-        const probeClient = createChainClient(rpcUrl);
+        const probeClient = createChainClient(rpcUrl, chainId);
         try {
           await probeClient.getBlockNumber();
           activeRpcUrl = rpcUrl;
@@ -364,19 +281,26 @@ export function useSwapData({
             acc[token.address.toLowerCase()] = '0';
             return acc;
           }, {});
-          setBalances(zeroBalances);
+          setBalancesByWalletChain((prev) => ({
+            ...prev,
+            [walletAddress]: { ...prev[walletAddress], [chainId]: { ...prev[walletAddress]?.[chainId], ...zeroBalances } },
+          }));
         }
         return;
       }
 
       const next = await fetchBalancesForTokens({
         rpcUrl: activeRpcUrl,
+        chainId,
         walletAddress: walletAddress as `0x${string}`,
         tokens: trackedBalanceTokens,
       });
 
       if (!cancelled) {
-        setBalances(next);
+        setBalancesByWalletChain((prev) => ({
+          ...prev,
+          [walletAddress]: { ...prev[walletAddress], [chainId]: { ...prev[walletAddress]?.[chainId], ...next } },
+        }));
       }
     }
 
@@ -388,12 +312,6 @@ export function useSwapData({
       trackedBalanceTokens.length === 0 ||
       orderedRpcUrls.length === 0
     ) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (loadAllTokenBalances) {
       return () => {
         cancelled = true;
       };
@@ -412,81 +330,19 @@ export function useSwapData({
     chainId,
     orderedRpcUrls,
     trackedBalanceTokens,
-    loadAllTokenBalances,
   ]);
 
   const importTokenByAddress = useCallback(
     async (address: `0x${string}`) => {
-      if (orderedRpcUrls.length === 0) {
-        throw new Error(TOKEN_LOOKUP_UNAVAILABLE_ERROR);
-      }
+      const tokenData = await importCatalogToken(chainId, address);
 
-      let symbol: string | undefined;
-      let name: string | undefined;
-      let decimals: number | undefined;
-      let lastError: unknown;
-      const logoPromise = fetchCoinGeckoTokenImageUrl({ chainId, address });
-
-      for (const rpcUrl of orderedRpcUrls) {
-        try {
-          const client = createChainClient(rpcUrl);
-          const [nextSymbol, nextName, nextDecimals] = await Promise.all([
-            client.readContract({
-              address,
-              abi: erc20Abi,
-              functionName: 'symbol',
-            }),
-            client.readContract({
-              address,
-              abi: erc20Abi,
-              functionName: 'name',
-            }),
-            client.readContract({
-              address,
-              abi: erc20Abi,
-              functionName: 'decimals',
-            }),
-          ]);
-
-          symbol = nextSymbol;
-          name = nextName;
-          decimals = nextDecimals;
-          break;
-        } catch (error) {
-          lastError = error;
-        }
-      }
-
-      if (!symbol || !name || decimals === undefined) {
-        throw new Error(
-          normalizeImportTokenError(
-            lastError instanceof Error ? lastError.message : undefined,
-          ),
-        );
-      }
-
-      const logoURI = await logoPromise.catch(() => null);
-
-      const importedToken: UiToken = {
-        chainId,
-        address,
-        symbol,
-        name,
-        decimals,
-        ...(logoURI ? { logoURI } : {}),
-      };
-
-      setImportedByChain((prev) => {
-        const chainList = prev[chainId] ?? [];
-        return {
-          ...prev,
-          [chainId]: dedupeTokens([...chainList, importedToken]),
-        };
+      await queryClient.invalidateQueries({
+        queryKey: ['catalog', 'tokens', chainId],
       });
 
-      return importedToken;
+      return tokenData;
     },
-    [chainId, orderedRpcUrls],
+    [chainId, queryClient],
   );
 
   return {
@@ -497,7 +353,7 @@ export function useSwapData({
     uniqueRuntimeNetworks,
     loadingDynamicTokens,
     securitySyncing,
-    balances,
+    balances: balancesByWalletChain[walletAddress ?? '']?.[chainId] ?? {},
     importTokenByAddress,
   };
 }

@@ -100,35 +100,36 @@ export async function fetchUserInfo(walletAddress: string) {
 
 const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3';
 
-export async function fetchCoinGeckoTokenImageUrl({
-  chainId,
-  address,
-}: {
+type ImportTokenApiResponse = {
   chainId: number;
   address: string;
-}): Promise<string | null> {
-  if (address === 'native') return null;
+  symbol: string;
+  name: string;
+  decimals: number;
+  logoUri?: string | null;
+};
 
-  const network = getChainConfig(chainId)?.geckoTerminalNetwork ?? null;
-  if (!network) return null;
-
-  try {
-    const url = `https://api.geckoterminal.com/api/v2/networks/${network}/tokens/${address.toLowerCase()}`;
-    const response = await fetch(url, {
-      headers: { Accept: 'application/json;version=20230302' },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) return null;
-
-    const json = (await response.json()) as {
-      data?: { attributes?: { image_url?: string | null } };
-    };
-
-    return json.data?.attributes?.image_url ?? null;
-  } catch {
-    return null;
-  }
+export async function importCatalogToken(
+  chainId: number,
+  address: string,
+): Promise<CatalogTokenResponse> {
+  ensureApiBaseUrlConfigured();
+  const response = await apiClient<
+    ApiResponseEnvelope<ImportTokenApiResponse>
+  >(`${BASE_URLS.CATALOG}/import-token`, {
+    method: 'POST',
+    body: JSON.stringify({ chainId, address }),
+    cache: 'no-store',
+  });
+  const data = unwrapResponseData(response, 'Import token response was empty');
+  return {
+    chainId: data.chainId,
+    address: data.address as `0x${string}`,
+    symbol: data.symbol,
+    name: data.name,
+    decimals: data.decimals,
+    ...(data.logoUri ? { logoURI: data.logoUri } : {}),
+  };
 }
 
 async function readCoinGeckoUsdValue(
