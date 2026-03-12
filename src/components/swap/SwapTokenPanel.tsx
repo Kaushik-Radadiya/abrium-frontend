@@ -68,9 +68,11 @@ export function SwapTokenPanel({
           <div className='text-[16px] leading-none text-[var(--neutral-text-textWeak)]'>
             {label}
           </div>
-          <div className='text-xs  text-[var(--neutral-text-textWeak)]'>
-            Balance: <span className='text-(--neutral-text)'>{balance ?? '0.00'}{token ? ` ${token.symbol}` : ''}</span>
-          </div>
+          {balance !== undefined && (
+            <div className='text-xs  text-(--neutral-text-textWeak)'>
+              Balance: <span className='text-(--neutral-text)'>{balance}{token ? ` ${token.symbol}` : ''}</span>
+            </div>
+          )}
         </div>
         <div className='grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3'>
           <div className='grid gap-1.5 overflow-hidden min-w-0'>

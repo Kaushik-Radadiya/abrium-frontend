@@ -30,15 +30,25 @@ export function formatAmount(
   if (!Number.isFinite(num) || num < 0) return '0';
 
   // Use a custom formatter only when the caller overrides the default decimals
-  if (decimals === TOKEN_DECIMALS) {
-    return TOKEN_FORMATTER.format(num);
+  const formatter =
+    decimals === TOKEN_DECIMALS
+      ? TOKEN_FORMATTER
+      : new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: decimals,
+          useGrouping: false,
+        });
+
+  const formatted = formatter.format(num);
+
+  if (formatted === '0' && num > 0) {
+    return new Intl.NumberFormat('en-US', {
+      maximumSignificantDigits: 2,
+      useGrouping: false,
+    }).format(num);
   }
 
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: decimals,
-    useGrouping: false,
-  }).format(num);
+  return formatted;
 }
 
 export function formatApproxUsd(value: number | null | undefined): string {
