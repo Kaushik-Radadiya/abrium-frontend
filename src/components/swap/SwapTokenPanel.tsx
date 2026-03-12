@@ -52,11 +52,19 @@ export function SwapTokenPanel({
   return (
     <div className={TOKEN_SECTION_CLASS}>
       <div className={TOKEN_TOP_WALLET_CLASS}>
-        <WalletTrigger receiveMode={label === 'Receive'} onReceiveWalletChange={onReceiveWalletChange} />
+        <WalletTrigger
+          receiveMode={label === 'Receive'}
+          onReceiveWalletChange={onReceiveWalletChange}
+        />
       </div>
       <div className={TOKEN_BOX_CLASS}>
-        <div className='text-[16px] leading-none text-[var(--neutral-text-textWeak)]'>
-          {label}
+        <div className='flex items-center justify-between'>
+          <div className='text-[16px] leading-none text-[var(--neutral-text-textWeak)]'>
+            {label}
+          </div>
+          <div className='text-xs  text-[var(--neutral-text-textWeak)]'>
+            Balance: <span className='text-(--neutral-text)'>0.00</span>
+          </div>
         </div>
         <div className='grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3'>
           <div className='grid gap-1.5 overflow-hidden min-w-0'>
