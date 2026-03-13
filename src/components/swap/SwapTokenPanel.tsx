@@ -70,7 +70,11 @@ export function SwapTokenPanel({
           </div>
           {balance !== undefined && (
             <div className='text-xs  text-(--neutral-text-textWeak)'>
-              Balance: <span className='text-(--neutral-text)'>{formatBalance(balance)}{token ? ` ${token.symbol}` : ''}</span>
+              Balance:{' '}
+              <span className='text-(--neutral-text)'>
+                {formatBalance(balance, 3)}
+                {token ? ` ${token.symbol}` : ''}
+              </span>
             </div>
           )}
         </div>

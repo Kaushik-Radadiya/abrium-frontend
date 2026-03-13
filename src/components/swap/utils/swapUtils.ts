@@ -1,5 +1,6 @@
 import { formatUnits, getAddress, isAddress, parseUnits } from 'viem';
 import type { UiToken } from '@/lib/tokens';
+import { formatBalance } from '@/lib/formatAmount';
 
 export const FALLBACK_SWAPPER_ADDRESS =
   '0x000000000000000000000000000000000000dEaD';
@@ -61,9 +62,7 @@ export function formatAmountFromSmallest(
 ): string {
   try {
     const raw = formatUnits(BigInt(value), decimals);
-    const num = parseFloat(raw);
-    if (!Number.isFinite(num) || num <= 0) return '0';
-    return parseFloat(num.toFixed(6)).toString();
+    return formatBalance(raw, decimals);
   } catch {
     return '0';
   }

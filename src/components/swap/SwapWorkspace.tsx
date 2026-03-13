@@ -283,7 +283,7 @@ export function SwapWorkspace() {
     chainId: toChainId,
     tokenAddress: selectedToToken?.address ?? null,
     amount: toAmount,
-    refetchIntervalMs: 5_000,
+    refetchIntervalMs: 60_000,
   });
 
   const onFromAmountChange = useCallback((value: string) => {

@@ -62,15 +62,11 @@ export function formatUsd(value: number | null | undefined): string {
   return USD_FORMATTER.format(num);
 }
 
-const BALANCE_FORMATTER = new Intl.NumberFormat('en-US', {
-  maximumSignificantDigits: 3,
-  useGrouping: false,
-});
-
 export function formatBalance(
   value: string | number | null | undefined,
+  decimals: number = TOKEN_DECIMALS + 3,
 ): string {
   const num = typeof value === 'string' ? parseFloat(value) : (value ?? NaN);
   if (!Number.isFinite(num) || num <= 0) return '0';
-  return BALANCE_FORMATTER.format(num);
+  return formatAmount(num, decimals);
 }
