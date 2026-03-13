@@ -27,7 +27,7 @@ import {
 } from '@/components/swap/utils/swapUtils';
 import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatUsd } from '@/lib/formatAmount';
+import { formatAmount, formatUsd } from '@/lib/formatAmount';
 import type { SecurityLevel } from '@/lib/api';
 import type { WalletSelection } from '@/lib/receive-wallet';
 import { cn } from '@/lib/utils';
@@ -283,7 +283,7 @@ export function SwapWorkspace() {
     chainId: toChainId,
     tokenAddress: selectedToToken?.address ?? null,
     amount: toAmount,
-    refetchIntervalMs: 60_000,
+    refetchIntervalMs: 5_000,
   });
 
   const onFromAmountChange = useCallback((value: string) => {
@@ -304,7 +304,7 @@ export function SwapWorkspace() {
       }
       const tokenAmount = numeric / fromOneTokenUsd;
       const normalized = Number.isFinite(tokenAmount)
-        ? tokenAmount.toString()
+        ? parseFloat(tokenAmount.toFixed(6)).toString()
         : '0.0';
       setFromAmount(normalized);
     },
@@ -497,7 +497,7 @@ export function SwapWorkspace() {
                 }
                 bottomLabel={
                   fromValueMode === 'usd' && selectedFromToken
-                    ? `~${fromAmount || '0.0'} ${selectedFromToken.symbol}`
+                    ? `~${formatAmount(fromAmount)} ${selectedFromToken.symbol}`
                     : undefined
                 }
                 onToggleValueDisplay={onToggleFromValueMode}
@@ -530,7 +530,7 @@ export function SwapWorkspace() {
                 onSelectToken={() => openSelector('to')}
                 bottomLabel={
                   toValueMode === 'usd' && selectedToToken
-                    ? `~${toAmount || '0.0'} ${selectedToToken.symbol}`
+                    ? `~${formatAmount(toAmount)} ${selectedToToken.symbol}`
                     : undefined
                 }
                 onToggleValueDisplay={selectedToToken && onToggleToValueMode}
