@@ -329,9 +329,10 @@ export function SwapWorkspace() {
     setToValueMode((previous) => (previous === 'token' ? 'usd' : 'token'));
   }, []);
 
-  const onFlipTokens = useCallback(() => {
+  const onFlipTokens = useCallback(async () => {
     if (!toToken) return;
     setHasReviewedQuote(false);
+    clearRiskState();
     setFromChainId(toChainId);
     setToChainId(fromChainId);
     setFromToken(toToken);
@@ -341,7 +342,15 @@ export function SwapWorkspace() {
     setFromValueMode('token');
     setFromUsdInput('');
     setToValueMode('token');
-  }, [fromChainId, fromToken, toAmount, toChainId, toToken]);
+
+    try {
+      await checkTokenRisk({
+        chainId: fromChainId,
+        tokenAddress: fromToken,
+      });
+    } catch {
+    }
+  }, [checkTokenRisk, clearRiskState, fromChainId, fromToken, toAmount, toChainId, toToken]);
 
   const onSelectToken = useCallback(
     async (address: string) => {
