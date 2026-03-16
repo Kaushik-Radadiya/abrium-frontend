@@ -251,7 +251,7 @@ export function SwapWorkspace() {
   const animatedToAmount = useCountUpValue(toAmount, {
     enabled: shouldShowQuote && !isQuoteFetching,
     durationMs: 800,
-    maxDecimals: 6,
+    maxDecimals: selectedToToken?.decimals ?? 6,
   });
 
   useQuoteReceiveSync(
@@ -311,19 +311,20 @@ export function SwapWorkspace() {
         return;
       }
       const tokenAmount = numeric / fromOneTokenUsd;
+      const tokenDecimals = selectedFromToken?.decimals ?? 6;
       const normalized = Number.isFinite(tokenAmount)
-        ? parseFloat(tokenAmount.toFixed(6)).toString()
+        ? parseFloat(tokenAmount.toFixed(tokenDecimals)).toString()
         : '0.0';
       setFromAmount(normalized);
     },
-    [fromOneTokenUsd],
+    [fromOneTokenUsd, selectedFromToken?.decimals],
   );
 
   const onToggleFromValueMode = useCallback(() => {
     setFromValueMode((previous) => {
       if (previous === 'token') {
         if (fromAmountUsdValue && Number.isFinite(fromAmountUsdValue)) {
-          setFromUsdInput(String(fromAmountUsdValue));
+          setFromUsdInput(fromAmountUsdValue.toFixed(2));
         } else {
           setFromUsdInput('');
         }
