@@ -288,15 +288,10 @@ export function SwapWorkspace() {
     if (!fromUSD || !toUSD || fromUSD <= 0) return undefined;
     const diff = toUSD - fromUSD;
     const pct = (diff / fromUSD) * 100;
-    const sign = diff >= 0 ? '+' : '-';
-    const absDiff = Math.abs(diff);
-    const diffDecimals =
-      absDiff === 0
-        ? 2
-        : absDiff >= 0.01
-          ? 2
-          : Math.ceil(-Math.log10(absDiff)) + 1;
-    return `${sign}$${absDiff.toFixed(diffDecimals)} (${Math.abs(pct).toFixed(2)}%)`;
+    const pctSign = diff < 0 ? '-' : '';
+    const toUSDDecimals =
+      toUSD >= 0.01 ? 2 : Math.ceil(-Math.log10(Math.abs(toUSD))) + 1;
+    return `$${toUSD.toFixed(toUSDDecimals)} (${pctSign}${Math.abs(pct).toFixed(2)}%)`;
   }, [shouldShowQuote, isQuoteFetching, quote, fromAmountUsdValue, toAmountUsdValue]);
 
   const onFromAmountChange = useCallback((value: string) => {
