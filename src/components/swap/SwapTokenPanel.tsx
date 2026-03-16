@@ -16,7 +16,6 @@ type Props = {
   token?: UiToken;
   usdValue?: number | null;
   selectedChainIcon?: string | null;
-  selectedChainKey?: string;
   onSelectToken: () => void;
   editable?: boolean;
   onAmountChange?: (nextValue: string) => void;
@@ -51,7 +50,6 @@ export function SwapTokenPanel({
   token,
   usdValue,
   selectedChainIcon,
-  selectedChainKey,
   onSelectToken,
   editable = false,
   onAmountChange,
@@ -147,10 +145,12 @@ export function SwapTokenPanel({
                   <span className='truncate'>
                     {bottomLabel ?? formatApproxUsd(usdValue)}
                   </span>
-                  <ArrowDownUp
-                    className='size-3 cursor-pointer shrink-0'
-                    onClick={onToggleValueDisplay}
-                  />
+                  {onToggleValueDisplay && (
+                    <ArrowDownUp
+                      className='size-3 cursor-pointer shrink-0'
+                      onClick={onToggleValueDisplay}
+                    />
+                  )}
                 </>
               )}
             </div>
@@ -158,7 +158,6 @@ export function SwapTokenPanel({
           <TokenPill
             token={token}
             selectedChainIcon={selectedChainIcon}
-            selectedChainKey={selectedChainKey}
             onClick={onSelectToken}
             riskLevel={riskLevel}
             riskReasons={riskReasons}

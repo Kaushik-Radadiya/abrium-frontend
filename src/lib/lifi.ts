@@ -145,6 +145,8 @@ function mapSdkQuote(
       typeof step.action.slippage === 'number'
         ? Number((step.action.slippage * 100).toFixed(4))
         : null,
+    fromAmountUSD: Number.isFinite(fromUSD) && fromUSD > 0 ? fromUSD : null,
+    toAmountUSD: Number.isFinite(toUSD) && toUSD > 0 ? toUSD : null,
     priceImpact,
     gasFee: sumBigIntStrings(gasCosts.map((c) => c.amount)),
     gasFeeUSD: Number.isFinite(gasFeeUSDNumber)

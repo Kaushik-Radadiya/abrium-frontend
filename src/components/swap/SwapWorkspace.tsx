@@ -52,7 +52,6 @@ export function SwapWorkspace() {
   const [importError, setImportError] = useState<string | null>(null);
   const [fromValueMode, setFromValueMode] = useState<'token' | 'usd'>('token');
   const [fromUsdInput, setFromUsdInput] = useState('');
-  const [toValueMode, setToValueMode] = useState<'token' | 'usd'>('token');
   const [showDangerModal, setShowDangerModal] = useState(false);
   const [dangerProceedAccepted, setDangerProceedAccepted] = useState(false);
   const [hasReviewedQuote, setHasReviewedQuote] = useState(false);
@@ -250,7 +249,7 @@ export function SwapWorkspace() {
     !shouldEnforceDangerGuard;
 
   const animatedToAmount = useCountUpValue(toAmount, {
-    enabled: toValueMode === 'token' && shouldShowQuote && !isQuoteFetching,
+    enabled: shouldShowQuote && !isQuoteFetching,
     durationMs: 800,
     maxDecimals: 6,
   });
@@ -281,6 +280,24 @@ export function SwapWorkspace() {
     amount: toAmount,
     refetchIntervalMs: 60_000,
   });
+
+  const priceImpactLabel = useMemo(() => {
+    if (!shouldShowQuote || isQuoteFetching || !quote) return undefined;
+    const fromUSD = fromAmountUsdValue;
+    const toUSD = toAmountUsdValue;
+    if (!fromUSD || !toUSD || fromUSD <= 0) return undefined;
+    const diff = toUSD - fromUSD;
+    const pct = (diff / fromUSD) * 100;
+    const sign = diff >= 0 ? '+' : '-';
+    const absDiff = Math.abs(diff);
+    const diffDecimals =
+      absDiff === 0
+        ? 2
+        : absDiff >= 0.01
+          ? 2
+          : Math.ceil(-Math.log10(absDiff)) + 1;
+    return `${sign}$${absDiff.toFixed(diffDecimals)} (${Math.abs(pct).toFixed(2)}%)`;
+  }, [shouldShowQuote, isQuoteFetching, quote, fromAmountUsdValue, toAmountUsdValue]);
 
   const onFromAmountChange = useCallback((value: string) => {
     setFromAmount(value);
@@ -321,10 +338,6 @@ export function SwapWorkspace() {
     });
   }, [fromAmountUsdValue]);
 
-  const onToggleToValueMode = useCallback(() => {
-    setToValueMode((previous) => (previous === 'token' ? 'usd' : 'token'));
-  }, []);
-
   const onFlipTokens = useCallback(async () => {
     if (!toToken) return;
     setHasReviewedQuote(false);
@@ -337,7 +350,6 @@ export function SwapWorkspace() {
     setToAmount('0.0');
     setFromValueMode('token');
     setFromUsdInput('');
-    setToValueMode('token');
 
     try {
       await checkTokenRisk({
@@ -374,9 +386,6 @@ export function SwapWorkspace() {
       if (selectorTarget === 'from') {
         setFromValueMode('token');
         setFromUsdInput('');
-      }
-      if (selectorTarget === 'to') {
-        setToValueMode('token');
       }
       setSelectorTarget(null);
       setNetworkMenuOpen(false);
@@ -452,7 +461,6 @@ export function SwapWorkspace() {
   const onDangerGoBack = useCallback(() => {
     setToToken('');
     setToAmount('0.0');
-    setToValueMode('token');
     clearRiskState();
   }, [clearRiskState]);
 
@@ -499,7 +507,6 @@ export function SwapWorkspace() {
                 token={selectedFromToken}
                 usdValue={fromAmountUsdValue}
                 selectedChainIcon={fromSelectedChainIcon}
-                selectedChainKey={fromSelectedChainKey}
                 onSelectToken={() => openSelector('from')}
                 editable
                 onAmountChange={
@@ -525,22 +532,12 @@ export function SwapWorkspace() {
 
               <SwapTokenPanel
                 label='Receive'
-                amount={
-                  toValueMode === 'usd'
-                    ? formatUsd(toAmountUsdValue)
-                    : animatedToAmount
-                }
+                amount={animatedToAmount}
                 token={selectedToToken}
-                usdValue={toValueMode === 'token' ? toAmountUsdValue : 0}
+                usdValue={toAmountUsdValue}
                 selectedChainIcon={toSelectedChainIcon}
-                selectedChainKey={toSelectedChainKey}
                 onSelectToken={() => openSelector('to')}
-                bottomLabel={
-                  toValueMode === 'usd' && selectedToToken
-                    ? `~${formatAmount(toAmount)} ${selectedToToken.symbol}`
-                    : undefined
-                }
-                onToggleValueDisplay={selectedToToken && onToggleToValueMode}
+                bottomLabel={priceImpactLabel ?? formatUsd(toAmountUsdValue) ?? undefined}
                 onReceiveWalletChange={setReceiveWalletSelection}
                 receiveWalletSelection={receiveWalletSelection}
                 loading={isQuoteFetching && shouldShowQuote}

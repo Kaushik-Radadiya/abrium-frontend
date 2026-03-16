@@ -17,27 +17,20 @@ import {
 type Props = {
   token?: UiToken;
   selectedChainIcon?: string | null;
-  selectedChainKey?: string;
   onClick: () => void;
   riskLevel?: SecurityLevel | null;
   riskReasons?: string[] | null;
   animateRiskBorder?: boolean;
 };
 
-function resolveChainLabel(token?: UiToken, selectedChainKey?: string) {
-  if (selectedChainKey === 'ethereum' || selectedChainKey === 'eth')
-    return 'ETH';
-  if (selectedChainKey === 'polygon' || selectedChainKey === 'pol')
-    return 'POL';
-  if (selectedChainKey === 'base' || selectedChainKey === 'bas') return 'ETH';
+function resolveChainLabel(token?: UiToken) {
   if (!token) return '';
-  return getChain(token.chainId)?.nativeSymbol ?? token.symbol;
+  return getChain(token.chainId)?.name ?? token.symbol;
 }
 
 export function TokenPill({
   token,
   selectedChainIcon,
-  selectedChainKey,
   onClick,
   riskLevel = null,
   riskReasons = null,
@@ -95,7 +88,7 @@ export function TokenPill({
     );
   }
 
-  const chainLabel = resolveChainLabel(token, selectedChainKey);
+  const chainLabel = resolveChainLabel(token);
   const icon = (
     <span
       className='relative grid h-12 w-12 place-items-center overflow-visible rounded-full text-sm font-bold text-[var(--token-icon-text)]'
@@ -128,7 +121,7 @@ export function TokenPill({
         <span className='absolute bottom-0 -right-1.25 grid h-5.5 w-5.5 place-items-center overflow-hidden rounded-full border-2 border-[var(--token-pill-chain-badge-border)] bg-[var(--token-icon-bg)] shadow-[var(--token-pill-chain-badge-shadow)]'>
           <IconWithFallback
             src={selectedChainIcon}
-            alt={selectedChainKey ?? 'chain'}
+            alt={'chain'}
             fallback=''
             showFallback={false}
             sizes='20px'
@@ -178,7 +171,7 @@ export function TokenPill({
           <span className='whitespace-nowrap text-base font-medium text-[var(--neutral-text)]'>
             {token.symbol}
           </span>
-          <span className='text-xs uppercase text-[var(--neutral-text-textWeak)]'>
+          <span className='text-xs text-(--neutral-text-textWeak)'>
             {chainLabel}
           </span>
         </span>

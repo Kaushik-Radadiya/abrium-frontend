@@ -37,6 +37,8 @@ export type SwapQuoteResponsePayload = {
     recipient: string;
   };
   slippage: number | null;
+  fromAmountUSD: number | null;
+  toAmountUSD: number | null;
   priceImpact: number | null;
   gasFee: string | null;
   gasFeeUSD: string | null;
