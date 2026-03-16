@@ -58,8 +58,8 @@ export function formatApproxUsd(value: number | null | undefined): string {
 
 export function formatUsd(value: number | null | undefined): string {
   const num = value ?? 0;
-  if (!Number.isFinite(num)) return '$0.00';
-  return USD_FORMATTER.format(num);
+  if (!Number.isFinite(num)) return '~$0';
+  return `~${USD_FORMATTER.format(num)}`;
 }
 
 export function formatBalance(

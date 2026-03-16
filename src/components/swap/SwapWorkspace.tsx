@@ -532,7 +532,11 @@ export function SwapWorkspace() {
                 usdValue={toAmountUsdValue}
                 selectedChainIcon={toSelectedChainIcon}
                 onSelectToken={() => openSelector('to')}
-                bottomLabel={priceImpactLabel ?? formatUsd(toAmountUsdValue) ?? undefined}
+                bottomLabel={
+                  priceImpactLabel ??
+                  formatUsd(toAmountUsdValue) ??
+                  undefined
+                }
                 onReceiveWalletChange={setReceiveWalletSelection}
                 receiveWalletSelection={receiveWalletSelection}
                 loading={isQuoteFetching && shouldShowQuote}

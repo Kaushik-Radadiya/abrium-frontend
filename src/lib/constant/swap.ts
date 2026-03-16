@@ -24,10 +24,9 @@ export const TRANSACTION_DEADLINE_OPTIONS = [
   { label: '30 min', value: '30' },
 ];
 
-
 export const RECEIVE_AMOUNT_FORMATTER = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 3,
   useGrouping: false,
 });
 

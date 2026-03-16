@@ -40,7 +40,7 @@ function formatPanelAmount(label: string, amount: string) {
   if (label !== 'Receive') return amount && amount !== '0.0' ? amount : '0.0';
 
   const parsedAmount = Number(amount);
-  if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return '0.00';
+  if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return '0.0';
   return RECEIVE_AMOUNT_FORMATTER.format(parsedAmount);
 }
 
