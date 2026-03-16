@@ -291,7 +291,7 @@ export function SwapWorkspace() {
     const pctSign = diff < 0 ? '-' : '';
     const toUSDDecimals =
       toUSD >= 0.01 ? 2 : Math.ceil(-Math.log10(Math.abs(toUSD))) + 1;
-    return `$${toUSD.toFixed(toUSDDecimals)} (${pctSign}${Math.abs(pct).toFixed(2)}%)`;
+    return `~$${toUSD.toFixed(toUSDDecimals)} (${pctSign}${Math.abs(pct).toFixed(2)}%)`;
   }, [shouldShowQuote, isQuoteFetching, quote, fromAmountUsdValue, toAmountUsdValue]);
 
   const onFromAmountChange = useCallback((value: string) => {
@@ -533,9 +533,7 @@ export function SwapWorkspace() {
                 selectedChainIcon={toSelectedChainIcon}
                 onSelectToken={() => openSelector('to')}
                 bottomLabel={
-                  priceImpactLabel ??
-                  formatUsd(toAmountUsdValue) ??
-                  undefined
+                  priceImpactLabel ?? formatUsd(toAmountUsdValue) ?? undefined
                 }
                 onReceiveWalletChange={setReceiveWalletSelection}
                 receiveWalletSelection={receiveWalletSelection}
