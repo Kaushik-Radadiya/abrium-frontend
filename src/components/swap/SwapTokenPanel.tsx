@@ -13,6 +13,7 @@ import { RECEIVE_AMOUNT_FORMATTER } from '@/lib/constant/swap';
 type Props = {
   label: string;
   amount: string;
+  amountDisplayMode?: 'token' | 'usd';
   token?: UiToken;
   usdValue?: number | null;
   selectedChainIcon?: string | null;
@@ -21,6 +22,7 @@ type Props = {
   onAmountChange?: (nextValue: string) => void;
   loading?: boolean;
   bottomLabel?: string;
+  bottomSubLabel?: string;
   onToggleValueDisplay?: () => void;
   onReceiveWalletChange?: (selection: WalletSelection | null) => void;
   receiveWalletSelection?: WalletSelection | null;
@@ -36,8 +38,13 @@ const TOKEN_TOP_WALLET_CLASS = 'flex items-center gap-2 py-2.5 px-4';
 const TOKEN_SECTION_CLASS =
   'grid gap-1 rounded-[16px] border border-[var(--swap-token-border)] bg-[var(--neutral-background)]';
 
-function formatPanelAmount(label: string, amount: string) {
+function formatPanelAmount(
+  label: string,
+  amount: string,
+  amountDisplayMode: 'token' | 'usd',
+) {
   if (label !== 'Receive') return amount && amount !== '0.0' ? amount : '0.0';
+  if (amountDisplayMode === 'usd') return amount || '$0.0';
 
   const parsedAmount = Number(amount);
   if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return '0.0';
@@ -47,6 +54,7 @@ function formatPanelAmount(label: string, amount: string) {
 export function SwapTokenPanel({
   label,
   amount,
+  amountDisplayMode = 'token',
   token,
   usdValue,
   selectedChainIcon,
@@ -55,6 +63,7 @@ export function SwapTokenPanel({
   onAmountChange,
   loading = false,
   bottomLabel,
+  bottomSubLabel,
   onToggleValueDisplay,
   onReceiveWalletChange,
   receiveWalletSelection,
@@ -62,7 +71,7 @@ export function SwapTokenPanel({
   riskReasons = null,
   animateRiskBorder = false,
 }: Props) {
-  const displayAmount = formatPanelAmount(label, amount);
+  const displayAmount = formatPanelAmount(label, amount, amountDisplayMode);
 
   return (
     <div className={TOKEN_SECTION_CLASS}>
@@ -81,16 +90,25 @@ export function SwapTokenPanel({
           <div className='grid gap-1.5 overflow-hidden min-w-0'>
             {editable ? (
               <OverflowTooltipText
-                text={amount}
+                text={
+                  amountDisplayMode === 'usd' && amount
+                    ? `$${amount}`
+                    : amount
+                }
                 ariaLabel={`${label} amount`}
                 trigger={
-                  <input
-                    className='h-auto min-h-0 w-full border-0 bg-transparent p-0 font-normal font-mono lg:text-3xl text-2xl text-[var(--swap-amount)] outline-none placeholder:text-[var(--neutral-text-placeholder)] overflow-hidden text-ellipsis whitespace-nowrap'
-                    value={amount}
-                    type='number'
-                    onChange={(event) => onAmountChange?.(event.target.value)}
-                    placeholder='0.0'
-                  />
+                  <div className='flex items-center min-w-0 w-full font-mono lg:text-3xl text-2xl text-[var(--swap-amount)]'>
+                    {amountDisplayMode === 'usd' ? (
+                      <span className='shrink-0'>$</span>
+                    ) : null}
+                    <input
+                      className='h-auto min-h-0 w-full border-0 bg-transparent p-0 font-normal outline-none placeholder:text-[var(--neutral-text-placeholder)] overflow-hidden text-ellipsis whitespace-nowrap'
+                      value={amount}
+                      type='number'
+                      onChange={(event) => onAmountChange?.(event.target.value)}
+                      placeholder='0.0'
+                    />
+                  </div>
                 }
               />
             ) : loading ? (
@@ -142,9 +160,14 @@ export function SwapTokenPanel({
                 />
               ) : (
                 <>
-                  <span className='truncate'>
-                    {bottomLabel ?? formatApproxUsd(usdValue)}
-                  </span>
+                  <div className='min-w-0 flex gap-1 items-center'>
+                    <div className='truncate'>
+                      {bottomLabel ?? formatApproxUsd(usdValue)}
+                    </div>
+                    {bottomSubLabel ? (
+                      <div className='truncate'>{bottomSubLabel}</div>
+                    ) : null}
+                  </div>
                   {onToggleValueDisplay && (
                     <ArrowDownUp
                       className='size-3 cursor-pointer shrink-0'

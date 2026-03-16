@@ -27,7 +27,7 @@ import {
 } from '@/components/swap/utils/swapUtils';
 import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatAmount, formatUsd } from '@/lib/formatAmount';
+import { formatAmount, formatApproxUsd, formatUsd } from '@/lib/formatAmount';
 import type { SecurityLevel } from '@/lib/api';
 import type { WalletSelection } from '@/lib/receive-wallet';
 import { cn } from '@/lib/utils';
@@ -50,7 +50,7 @@ export function SwapWorkspace() {
   const deferredQuery = useDeferredValue(query);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
-  const [fromValueMode, setFromValueMode] = useState<'token' | 'usd'>('token');
+  const [valueMode, setValueMode] = useState<'token' | 'usd'>('token');
   const [fromUsdInput, setFromUsdInput] = useState('');
   const [showDangerModal, setShowDangerModal] = useState(false);
   const [dangerProceedAccepted, setDangerProceedAccepted] = useState(false);
@@ -281,7 +281,7 @@ export function SwapWorkspace() {
     refetchIntervalMs: 60_000,
   });
 
-  const priceImpactLabel = useMemo(() => {
+  const priceImpact = useMemo(() => {
     if (!shouldShowQuote || isQuoteFetching || !quote) return undefined;
     const fromUSD = fromAmountUsdValue;
     const toUSD = toAmountUsdValue;
@@ -291,8 +291,17 @@ export function SwapWorkspace() {
     const pctSign = diff < 0 ? '-' : '';
     const toUSDDecimals =
       toUSD >= 0.01 ? 2 : Math.ceil(-Math.log10(Math.abs(toUSD))) + 1;
-    return `~$${toUSD.toFixed(toUSDDecimals)} (${pctSign}${Math.abs(pct).toFixed(2)}%)`;
-  }, [shouldShowQuote, isQuoteFetching, quote, fromAmountUsdValue, toAmountUsdValue]);
+    return {
+      usdLabel: `~$${toUSD.toFixed(toUSDDecimals)}`,
+      pctLabel: `(${pctSign}${Math.abs(pct).toFixed(2)}%)`,
+    };
+  }, [
+    shouldShowQuote,
+    isQuoteFetching,
+    quote,
+    fromAmountUsdValue,
+    toAmountUsdValue,
+  ]);
 
   const onFromAmountChange = useCallback((value: string) => {
     setFromAmount(value);
@@ -321,18 +330,18 @@ export function SwapWorkspace() {
   );
 
   const onToggleFromValueMode = useCallback(() => {
-    setFromValueMode((previous) => {
-      if (previous === 'token') {
-        if (fromAmountUsdValue && Number.isFinite(fromAmountUsdValue)) {
-          setFromUsdInput(fromAmountUsdValue.toFixed(2));
-        } else {
-          setFromUsdInput('');
-        }
-        return 'usd';
+    const nextMode = valueMode === 'token' ? 'usd' : 'token';
+
+    if (nextMode === 'usd') {
+      if (fromAmountUsdValue && Number.isFinite(fromAmountUsdValue)) {
+        setFromUsdInput(fromAmountUsdValue.toFixed(2));
+      } else {
+        setFromUsdInput('');
       }
-      return 'token';
-    });
-  }, [fromAmountUsdValue]);
+    }
+
+    setValueMode(nextMode);
+  }, [fromAmountUsdValue, valueMode]);
 
   const onFlipTokens = useCallback(async () => {
     if (!toToken) return;
@@ -344,7 +353,7 @@ export function SwapWorkspace() {
     setToToken(fromToken);
     setFromAmount(toAmount);
     setToAmount('0.0');
-    setFromValueMode('token');
+    setValueMode('token');
     setFromUsdInput('');
 
     try {
@@ -380,7 +389,7 @@ export function SwapWorkspace() {
         setToAmount('0.0');
       }
       if (selectorTarget === 'from') {
-        setFromValueMode('token');
+        setValueMode('token');
         setFromUsdInput('');
       }
       setSelectorTarget(null);
@@ -484,6 +493,8 @@ export function SwapWorkspace() {
   }, []);
 
   const isSelectorOpen = Boolean(selectorTarget);
+  const receiveValueMode = selectedToToken ? valueMode : 'token';
+
   return (
     <section className='relative h-full'>
       <AnimatePresence initial={false}>
@@ -499,19 +510,20 @@ export function SwapWorkspace() {
             <div className='flex flex-col gap-1'>
               <SwapTokenPanel
                 label='Send'
-                amount={fromValueMode === 'token' ? fromAmount : fromUsdInput}
+                amount={valueMode === 'token' ? fromAmount : fromUsdInput}
+                amountDisplayMode={valueMode}
                 token={selectedFromToken}
                 usdValue={fromAmountUsdValue}
                 selectedChainIcon={fromSelectedChainIcon}
                 onSelectToken={() => openSelector('from')}
                 editable
                 onAmountChange={
-                  fromValueMode === 'token'
+                  valueMode === 'token'
                     ? onFromAmountChange
                     : onFromUsdChange
                 }
                 bottomLabel={
-                  fromValueMode === 'usd' && selectedFromToken
+                  valueMode === 'usd' && selectedFromToken
                     ? `~${formatAmount(fromAmount)} ${selectedFromToken.symbol}`
                     : undefined
                 }
@@ -528,14 +540,24 @@ export function SwapWorkspace() {
 
               <SwapTokenPanel
                 label='Receive'
-                amount={animatedToAmount}
+                amount={
+                  receiveValueMode === 'usd'
+                    ? formatUsd(toAmountUsdValue)
+                    : animatedToAmount
+                }
+                amountDisplayMode={receiveValueMode}
                 token={selectedToToken}
                 usdValue={toAmountUsdValue}
                 selectedChainIcon={toSelectedChainIcon}
                 onSelectToken={() => openSelector('to')}
                 bottomLabel={
-                  priceImpactLabel ?? formatUsd(toAmountUsdValue) ?? undefined
+                  receiveValueMode === 'usd' && selectedToToken
+                    ? `~${formatAmount(toAmount)} ${selectedToToken.symbol}`
+                    : (priceImpact?.usdLabel ??
+                      formatApproxUsd(toAmountUsdValue) ??
+                      undefined)
                 }
+                bottomSubLabel={priceImpact?.pctLabel}
                 onReceiveWalletChange={setReceiveWalletSelection}
                 receiveWalletSelection={receiveWalletSelection}
                 loading={isQuoteFetching && shouldShowQuote}
