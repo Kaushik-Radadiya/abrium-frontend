@@ -86,8 +86,49 @@ export const SUPPORTED_CHAINS: SupportedChain[] = ALL_SUPPORTED_CHAINS.filter(
 
 export const DEFAULT_CHAIN_ID = SUPPORTED_CHAINS[0]?.id ?? 1;
 
-export function getChain(chainId: number) {
-  return SUPPORTED_CHAINS.find((chain) => chain.id === chainId);
+const CHAIN_FULL_NAME: Record<string, string> = {
+  ethereum:   'Ethereum',
+  polygon:    'Polygon',
+  base:       'Base',
+  bsc:        'BNB Smart Chain',
+  arbitrum:   'Arbitrum One',
+  zksync:     'zkSync Era',
+  linea:      'Linea',
+  scroll:     'Scroll',
+  optimism:   'Optimism',
+  avalanche:  'Avalanche',
+  fantom:     'Fantom',
+  cronos:     'Cronos',
+  okc:        'OKX Chain',
+  heco:       'Huobi ECO Chain',
+  gnosis:     'Gnosis',
+  kcc:        'KCC',
+  mantle:     'Mantle',
+  opbnb:      'opBNB',
+  zkfair:     'ZKFair',
+  blast:      'Blast',
+  manta:      'Manta Pacific',
+  berachain:  'Berachain',
+  abstract:   'Abstract',
+  hashkey:    'HashKey Chain',
+  sonic:      'Sonic',
+  story:      'Story',
+  unichain:   'Unichain',
+  worldchain: 'World Chain',
+  soneium:    'Soneium',
+  zircuit:    'Zircuit',
+  monad:      'Monad',
+};
+
+export function getChain(chainId: number): SupportedChain | undefined {
+  const supported = SUPPORTED_CHAINS.find((chain) => chain.id === chainId);
+  if (supported) return supported;
+
+  const key = CHAIN_KEY_BY_ID[chainId];
+  if (!key) return undefined;
+
+  const name = CHAIN_FULL_NAME[key] ?? (key.charAt(0).toUpperCase() + key.slice(1));
+  return { id: chainId, name, rpcUrls: [], explorerUrl: '', nativeSymbol: '', scope: 'production' };
 }
 
 // Mirrors the backend CHAIN_LIST in src/config/goPlusChains.ts.
