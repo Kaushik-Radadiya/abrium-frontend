@@ -1,6 +1,12 @@
 'use client';
 
-import { type CSSProperties, type ReactNode, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  type FocusEvent,
+  type PointerEvent,
+  type ReactElement,
+  useState,
+} from 'react';
 import {
   Tooltip,
   TooltipContent,
@@ -8,21 +14,13 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-type OverflowTooltipTriggerProps = {
-  setTriggerElement: (node: HTMLElement | null) => void;
-  onPointerEnter: () => void;
-  onFocus: () => void;
-  onPointerLeave: () => void;
-  onBlur: () => void;
-};
-
 type Props = {
   text: string;
   ariaLabel?: string;
   className?: string;
   style?: CSSProperties;
   tooltipClassName?: string;
-  renderTrigger?: (props: OverflowTooltipTriggerProps) => ReactNode;
+  trigger?: ReactElement;
 };
 
 export function OverflowTooltipText({
@@ -31,39 +29,42 @@ export function OverflowTooltipText({
   className,
   style,
   tooltipClassName,
-  renderTrigger,
+  trigger,
 }: Props) {
-  const triggerRef = useRef<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
 
-  const handleOpen = () => {
-    const element = triggerRef.current;
-    if (!element) return;
-    setOpen(element.scrollWidth > element.clientWidth);
+  const handleOpen = (
+    event: PointerEvent<HTMLElement> | FocusEvent<HTMLElement>,
+  ) => {
+    const container = event.currentTarget;
+    const measurableElement =
+      container.querySelector<HTMLElement>(
+        'input, textarea, [data-overflow-target="true"]',
+      ) ?? container;
+
+    setOpen(measurableElement.scrollWidth > measurableElement.clientWidth);
   };
 
   const handleClose = () => {
     setOpen(false);
   };
 
-  const setTriggerElement = (node: HTMLElement | null) => {
-    triggerRef.current = node;
-  };
-
   return (
     <Tooltip open={open}>
       <TooltipTrigger asChild>
-        {renderTrigger ? (
-          renderTrigger({
-            setTriggerElement,
-            onPointerEnter: handleOpen,
-            onFocus: handleOpen,
-            onPointerLeave: handleClose,
-            onBlur: handleClose,
-          })
+        {trigger ? (
+          <span
+            className='block min-w-0'
+            aria-label={ariaLabel}
+            onPointerEnter={handleOpen}
+            onFocus={handleOpen}
+            onPointerLeave={handleClose}
+            onBlur={handleClose}
+          >
+            {trigger}
+          </span>
         ) : (
           <span
-            ref={setTriggerElement}
             className={cn('block truncate cursor-pointer', className)}
             style={style}
             aria-label={ariaLabel}

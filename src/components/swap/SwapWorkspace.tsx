@@ -96,7 +96,6 @@ export function SwapWorkspace() {
     mutateAsync: checkTokenRisk,
     data: risk,
     error: riskMutationError,
-    isPending: isCheckingRisk,
     reset: resetRiskCheck,
   } = useTokenRiskMutation();
 
@@ -137,10 +136,7 @@ export function SwapWorkspace() {
     return risk.securityLevel;
   }, [risk, riskError]);
 
-  const hasReviewed = useMemo(
-    () => Boolean(risk),
-    [risk],
-  );
+  const hasReviewed = useMemo(() => Boolean(risk), [risk]);
 
   // Token selector modal context
   const activeChainTokens =
@@ -348,9 +344,16 @@ export function SwapWorkspace() {
         chainId: fromChainId,
         tokenAddress: fromToken,
       });
-    } catch {
-    }
-  }, [checkTokenRisk, clearRiskState, fromChainId, fromToken, toAmount, toChainId, toToken]);
+    } catch {}
+  }, [
+    checkTokenRisk,
+    clearRiskState,
+    fromChainId,
+    fromToken,
+    toAmount,
+    toChainId,
+    toToken,
+  ]);
 
   const onSelectToken = useCallback(
     async (address: string) => {
@@ -510,11 +513,6 @@ export function SwapWorkspace() {
                     : undefined
                 }
                 onToggleValueDisplay={onToggleFromValueMode}
-                balance={
-                  selectedFromToken
-                    ? fromBalances[selectedFromToken.address.toLowerCase()]
-                    : undefined
-                }
               />
 
               <Button
@@ -547,12 +545,8 @@ export function SwapWorkspace() {
                 receiveWalletSelection={receiveWalletSelection}
                 loading={isQuoteFetching && shouldShowQuote}
                 riskLevel={receiveRiskLevel}
+                riskReasons={risk?.reasons}
                 animateRiskBorder={Boolean(receiveRiskLevel)}
-                balance={
-                  selectedToToken
-                    ? toBalances[selectedToToken.address.toLowerCase()]
-                    : undefined
-                }
               />
             </div>
 

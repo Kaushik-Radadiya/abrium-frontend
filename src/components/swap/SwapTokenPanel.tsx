@@ -4,10 +4,11 @@ import { ArrowDownUp } from 'lucide-react';
 import type { UiToken } from '@/lib/tokens';
 import { TokenPill } from '@/components/swap/TokenPill';
 import { WalletTrigger } from '@/components/WalletTrigger';
-import { formatApproxUsd, formatBalance } from '@/lib/formatAmount';
+import { formatApproxUsd } from '@/lib/formatAmount';
 import { OverflowTooltipText } from '@/components/ui/OverflowTooltipText';
 import type { SecurityLevel } from '@/lib/api';
 import type { WalletSelection } from '@/lib/receive-wallet';
+import { RECEIVE_AMOUNT_FORMATTER } from '@/lib/constant/swap';
 
 type Props = {
   label: string;
@@ -25,6 +26,7 @@ type Props = {
   onReceiveWalletChange?: (selection: WalletSelection | null) => void;
   receiveWalletSelection?: WalletSelection | null;
   riskLevel?: SecurityLevel | null;
+  riskReasons?: string[] | null;
   animateRiskBorder?: boolean;
   balance?: string;
 };
@@ -34,6 +36,14 @@ const TOKEN_BOX_CLASS =
 const TOKEN_TOP_WALLET_CLASS = 'flex items-center gap-2 py-2.5 px-4';
 const TOKEN_SECTION_CLASS =
   'grid gap-1 rounded-[16px] border border-[var(--swap-token-border)] bg-[var(--neutral-background)]';
+
+function formatPanelAmount(label: string, amount: string) {
+  if (label !== 'Receive') return amount && amount !== '0.0' ? amount : '0.0';
+
+  const parsedAmount = Number(amount);
+  if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return '0.00';
+  return RECEIVE_AMOUNT_FORMATTER.format(parsedAmount);
+}
 
 export function SwapTokenPanel({
   label,
@@ -51,9 +61,11 @@ export function SwapTokenPanel({
   onReceiveWalletChange,
   receiveWalletSelection,
   riskLevel = null,
+  riskReasons = null,
   animateRiskBorder = false,
-  balance,
 }: Props) {
+  const displayAmount = formatPanelAmount(label, amount);
+
   return (
     <div className={TOKEN_SECTION_CLASS}>
       <div className={TOKEN_TOP_WALLET_CLASS}>
@@ -64,19 +76,8 @@ export function SwapTokenPanel({
         />
       </div>
       <div className={TOKEN_BOX_CLASS}>
-        <div className='flex items-center justify-between'>
-          <div className='text-[16px] leading-none text-[var(--neutral-text-textWeak)]'>
-            {label}
-          </div>
-          {balance !== undefined && (
-            <div className='text-xs  text-(--neutral-text-textWeak)'>
-              Balance:{' '}
-              <span className='text-(--neutral-text)'>
-                {formatBalance(balance, 3)}
-                {token ? ` ${token.symbol}` : ''}
-              </span>
-            </div>
-          )}
+        <div className='text-[16px] leading-none text-[var(--neutral-text-textWeak)]'>
+          {label}
         </div>
         <div className='grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3'>
           <div className='grid gap-1.5 overflow-hidden min-w-0'>
@@ -84,27 +85,15 @@ export function SwapTokenPanel({
               <OverflowTooltipText
                 text={amount}
                 ariaLabel={`${label} amount`}
-                renderTrigger={({
-                  setTriggerElement,
-                  onPointerEnter,
-                  onFocus,
-                  onPointerLeave,
-                  onBlur,
-                }) => (
+                trigger={
                   <input
-                    ref={setTriggerElement}
                     className='h-auto min-h-0 w-full border-0 bg-transparent p-0 font-normal font-mono lg:text-3xl text-2xl text-[var(--swap-amount)] outline-none placeholder:text-[var(--neutral-text-placeholder)] overflow-hidden text-ellipsis whitespace-nowrap'
                     value={amount}
                     type='number'
                     onChange={(event) => onAmountChange?.(event.target.value)}
                     placeholder='0.0'
-                    aria-label={`${label} amount`}
-                    onPointerEnter={onPointerEnter}
-                    onFocus={onFocus}
-                    onPointerLeave={onPointerLeave}
-                    onBlur={onBlur}
                   />
-                )}
+                }
               />
             ) : loading ? (
               <div
@@ -128,7 +117,7 @@ export function SwapTokenPanel({
             ) : (
               <div className='flex min-h-12 items-center overflow-hidden'>
                 <OverflowTooltipText
-                  text={amount && amount !== '0.0' ? amount : '0.0'}
+                  text={displayAmount}
                   ariaLabel={`${label} amount (calculated)`}
                   className='w-full lg:text-3xl text-2xl font-normal font-mono select-none'
                   style={{
@@ -172,6 +161,7 @@ export function SwapTokenPanel({
             selectedChainKey={selectedChainKey}
             onClick={onSelectToken}
             riskLevel={riskLevel}
+            riskReasons={riskReasons}
             animateRiskBorder={animateRiskBorder}
           />
         </div>
