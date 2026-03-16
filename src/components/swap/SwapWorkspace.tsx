@@ -293,12 +293,16 @@ export function SwapWorkspace() {
       toUSD >= 0.01 ? 2 : Math.ceil(-Math.log10(Math.abs(toUSD))) + 1;
     const absDiff = Math.abs(diff);
     const diffDecimals =
-      absDiff === 0 ? 2 : absDiff >= 0.01 ? 2 : Math.ceil(-Math.log10(absDiff)) + 1;
+      absDiff === 0
+        ? 2
+        : absDiff >= 0.01
+          ? 2
+          : Math.ceil(-Math.log10(absDiff)) + 1;
     const diffSign = diff < 0 ? '-' : '+';
     return {
       usdLabel: `~$${toUSD.toFixed(toUSDDecimals)}`,
       pctLabel: `(${pctSign}${Math.abs(pct).toFixed(2)}%)`,
-      dollarTooltip: `${diffSign}$${absDiff.toFixed(diffDecimals)} vs sent value`,
+      dollarTooltip: `(${diffSign}$${absDiff.toFixed(diffDecimals)})`,
     };
   }, [
     shouldShowQuote,
@@ -523,9 +527,7 @@ export function SwapWorkspace() {
                 onSelectToken={() => openSelector('from')}
                 editable
                 onAmountChange={
-                  valueMode === 'token'
-                    ? onFromAmountChange
-                    : onFromUsdChange
+                  valueMode === 'token' ? onFromAmountChange : onFromUsdChange
                 }
                 bottomLabel={
                   valueMode === 'usd' && selectedFromToken

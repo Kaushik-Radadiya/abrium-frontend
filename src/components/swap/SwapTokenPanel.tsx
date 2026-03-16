@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowDownUp } from 'lucide-react';
+import { useState } from 'react';
 import type { UiToken } from '@/lib/tokens';
 import { TokenPill } from '@/components/swap/TokenPill';
 import { WalletTrigger } from '@/components/WalletTrigger';
@@ -9,11 +10,6 @@ import { OverflowTooltipText } from '@/components/ui/OverflowTooltipText';
 import type { SecurityLevel } from '@/lib/api';
 import type { WalletSelection } from '@/lib/receive-wallet';
 import { RECEIVE_AMOUNT_FORMATTER } from '@/lib/constant/swap';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 type Props = {
   label: string;
@@ -81,6 +77,13 @@ export function SwapTokenPanel({
   animateRiskBorder = false,
 }: Props) {
   const displayAmount = formatPanelAmount(label, amount, amountDisplayMode);
+  const [showDollar, setShowDollar] = useState(false);
+  const [prevImpactPctLabel, setPrevImpactPctLabel] = useState(impactPctLabel);
+
+  if (prevImpactPctLabel !== impactPctLabel) {
+    setPrevImpactPctLabel(impactPctLabel);
+    setShowDollar(false);
+  }
 
   return (
     <div className={TOKEN_SECTION_CLASS}>
@@ -175,22 +178,13 @@ export function SwapTokenPanel({
                       <div className='truncate'>{bottomSubLabel}</div>
                     ) : null}
                     {impactPctLabel ? (
-                      impactDollarTooltip ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className='cursor-pointer text-xs shrink-0'>
-                              {impactPctLabel}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side='right'>
-                            {impactDollarTooltip}
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <span className='text-xs shrink-0'>
-                          {impactPctLabel}
-                        </span>
-                      )
+                      <span
+                        className='text-xs shrink-0 cursor-pointer'
+                        onMouseEnter={() => impactDollarTooltip && setShowDollar(true)}
+                        onMouseLeave={() => setShowDollar(false)}
+                      >
+                        {showDollar && impactDollarTooltip ? impactDollarTooltip : impactPctLabel}
+                      </span>
                     ) : null}
                   </div>
                   {onToggleValueDisplay && (
