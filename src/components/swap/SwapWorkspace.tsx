@@ -291,9 +291,14 @@ export function SwapWorkspace() {
     const pctSign = diff < 0 ? '-' : '';
     const toUSDDecimals =
       toUSD >= 0.01 ? 2 : Math.ceil(-Math.log10(Math.abs(toUSD))) + 1;
+    const absDiff = Math.abs(diff);
+    const diffDecimals =
+      absDiff === 0 ? 2 : absDiff >= 0.01 ? 2 : Math.ceil(-Math.log10(absDiff)) + 1;
+    const diffSign = diff < 0 ? '-' : '+';
     return {
       usdLabel: `~$${toUSD.toFixed(toUSDDecimals)}`,
       pctLabel: `(${pctSign}${Math.abs(pct).toFixed(2)}%)`,
+      dollarTooltip: `${diffSign}$${absDiff.toFixed(diffDecimals)} vs sent value`,
     };
   }, [
     shouldShowQuote,
@@ -557,7 +562,8 @@ export function SwapWorkspace() {
                       formatApproxUsd(toAmountUsdValue) ??
                       undefined)
                 }
-                bottomSubLabel={priceImpact?.pctLabel}
+                impactPctLabel={priceImpact?.pctLabel}
+                impactDollarTooltip={priceImpact?.dollarTooltip}
                 onReceiveWalletChange={setReceiveWalletSelection}
                 receiveWalletSelection={receiveWalletSelection}
                 loading={isQuoteFetching && shouldShowQuote}

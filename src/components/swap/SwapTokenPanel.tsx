@@ -9,6 +9,11 @@ import { OverflowTooltipText } from '@/components/ui/OverflowTooltipText';
 import type { SecurityLevel } from '@/lib/api';
 import type { WalletSelection } from '@/lib/receive-wallet';
 import { RECEIVE_AMOUNT_FORMATTER } from '@/lib/constant/swap';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type Props = {
   label: string;
@@ -23,6 +28,8 @@ type Props = {
   loading?: boolean;
   bottomLabel?: string;
   bottomSubLabel?: string;
+  impactPctLabel?: string;
+  impactDollarTooltip?: string;
   onToggleValueDisplay?: () => void;
   onReceiveWalletChange?: (selection: WalletSelection | null) => void;
   receiveWalletSelection?: WalletSelection | null;
@@ -64,6 +71,8 @@ export function SwapTokenPanel({
   loading = false,
   bottomLabel,
   bottomSubLabel,
+  impactPctLabel,
+  impactDollarTooltip,
   onToggleValueDisplay,
   onReceiveWalletChange,
   receiveWalletSelection,
@@ -91,9 +100,7 @@ export function SwapTokenPanel({
             {editable ? (
               <OverflowTooltipText
                 text={
-                  amountDisplayMode === 'usd' && amount
-                    ? `$${amount}`
-                    : amount
+                  amountDisplayMode === 'usd' && amount ? `$${amount}` : amount
                 }
                 ariaLabel={`${label} amount`}
                 trigger={
@@ -166,6 +173,24 @@ export function SwapTokenPanel({
                     </div>
                     {bottomSubLabel ? (
                       <div className='truncate'>{bottomSubLabel}</div>
+                    ) : null}
+                    {impactPctLabel ? (
+                      impactDollarTooltip ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className='cursor-pointer text-xs shrink-0'>
+                              {impactPctLabel}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side='right'>
+                            {impactDollarTooltip}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <span className='text-xs shrink-0'>
+                          {impactPctLabel}
+                        </span>
+                      )
                     ) : null}
                   </div>
                   {onToggleValueDisplay && (
