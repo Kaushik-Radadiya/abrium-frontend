@@ -40,6 +40,8 @@ export function TokenPill({
     riskLevel === 'caution' ||
     riskLevel === 'danger' ||
     riskLevel === 'verified';
+  const shouldHideRiskBorderAfterAnimation =
+    riskLevel === 'caution' || riskLevel === 'verified';
   const tooltipReasons = useMemo(
     () => riskReasons?.filter(Boolean).slice(0, 3) ?? [],
     [riskReasons],
@@ -74,6 +76,10 @@ export function TokenPill({
       `,
             }
           : {};
+  const riskShadowVarStyle = {
+    '--token-risk-shadow':
+      (riskBorderStyle as { boxShadow?: string }).boxShadow ?? 'none',
+  } as const;
 
   if (!token) {
     return (
@@ -102,10 +108,13 @@ export function TokenPill({
         className='absolute inset-0 rounded-full bg-[var(--token-icon-bg)] transition-shadow duration-300'
         style={{
           ...(showRiskBorder ? riskBorderStyle : {}),
+          ...riskShadowVarStyle,
           opacity: showRiskBorder ? 0.9 : 1,
           animation:
             showRiskBorder && animateRiskBorder
-              ? 'tokenRiskGlow 0.8s ease-in-out 5'
+              ? shouldHideRiskBorderAfterAnimation
+                ? 'tokenRiskGlow 0.8s ease-in-out 5, tokenRiskHide 700ms ease-out 4s forwards'
+                : 'tokenRiskGlow 0.8s ease-in-out 5'
               : undefined,
         }}
       >
@@ -193,6 +202,17 @@ export function TokenPill({
             100% {
               transform: scale(1);
               filter: brightness(1);
+            }
+          }
+
+          @keyframes tokenRiskHide {
+            0% {
+              opacity: 0.9;
+              box-shadow: var(--token-risk-shadow);
+            }
+            100% {
+              opacity: 1;
+              box-shadow: none;
             }
           }
         `}</style>
