@@ -22,7 +22,6 @@ import type { SwapQuoteRequestPayload } from '@/lib/quotes.types';
 import { Button } from '@/components/ui/Button';
 import {
   resolveSwapperAddress,
-  sortTokensByBalance,
   toSmallestUnit,
 } from '@/components/swap/utils/swapUtils';
 import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
@@ -65,14 +64,10 @@ export function SwapWorkspace() {
     selectedChainIcon: fromSelectedChainIcon,
     uniqueRuntimeNetworks: fromRuntimeNetworks,
     loadingDynamicTokens: fromLoadingDynamicTokens,
-    balances: fromBalances,
     importTokenByAddress: importFromTokenByAddress,
   } = useSwapData({
     chainId: fromChainId,
     staticChains: SUPPORTED_CHAINS,
-    walletAddress,
-    selectedFromToken: fromToken,
-    selectedToToken: fromToken,
   });
 
   const {
@@ -81,14 +76,10 @@ export function SwapWorkspace() {
     selectedChainIcon: toSelectedChainIcon,
     uniqueRuntimeNetworks: toRuntimeNetworks,
     loadingDynamicTokens: toLoadingDynamicTokens,
-    balances: toBalances,
     importTokenByAddress: importToTokenByAddress,
   } = useSwapData({
     chainId: toChainId,
     staticChains: SUPPORTED_CHAINS,
-    walletAddress: receiveWalletAddress ?? walletAddress,
-    selectedFromToken: toToken || undefined,
-    selectedToToken: toToken || undefined,
   });
 
   const {
@@ -140,7 +131,6 @@ export function SwapWorkspace() {
   // Token selector modal context
   const activeChainTokens =
     selectorTarget === 'to' ? toChainTokens : fromChainTokens;
-  const activeBalances = selectorTarget === 'to' ? toBalances : fromBalances;
   const activeLoadingDynamicTokens =
     selectorTarget === 'to' ? toLoadingDynamicTokens : fromLoadingDynamicTokens;
   const activeImportTokenByAddress =
@@ -153,21 +143,16 @@ export function SwapWorkspace() {
   const runtimeNetworks =
     fromRuntimeNetworks.length > 0 ? fromRuntimeNetworks : toRuntimeNetworks;
 
-  const sortedTokens = useMemo(
-    () => sortTokensByBalance(activeChainTokens, activeBalances),
-    [activeChainTokens, activeBalances],
-  );
-
   const filteredTokens = useMemo(() => {
     const value = deferredQuery.trim().toLowerCase();
-    if (!value) return sortedTokens;
-    return sortedTokens.filter(
+    if (!value) return activeChainTokens;
+    return activeChainTokens.filter(
       (token) =>
         token.symbol.toLowerCase().includes(value) ||
         token.name.toLowerCase().includes(value) ||
         token.address.toLowerCase().includes(value),
     );
-  }, [deferredQuery, sortedTokens]);
+  }, [deferredQuery, activeChainTokens]);
 
   const activeTokenAddressSet = useMemo(
     () =>
