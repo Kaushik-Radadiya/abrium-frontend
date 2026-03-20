@@ -1,193 +1,92 @@
 'use client';
 
-import { useCallback, useDeferredValue, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ArrowDownUp } from 'lucide-react';
-import { getAddress, isAddress } from 'viem';
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { DEFAULT_CHAIN_ID, SUPPORTED_CHAINS } from '@/lib/chains';
-import { useTokenRiskMutation } from '@/lib/api-hooks';
-import { SecurityRiskModal } from '@/components/trade/common/SecurityRiskModal';
-import { TradeTokenPanel } from '@/components/trade/common/TradeTokenPanel';
-import { TradeTokenSelectorModal } from '@/components/trade/common/TradeTokenSelectorModal';
-import { useSwapData } from '@/hooks/trade/useSwapData';
-import { useTokenUsdValue } from '@/hooks/trade/useTokenUsdValue';
+import { useTokenPairForm } from '@/hooks/trade/useTokenPairForm';
 import { useSwapQuote } from '@/hooks/trade/useSwapQuote';
-import { useCountUpValue } from '@/hooks/trade/useCountUpValue';
-import {
-  useFromTokenSync,
-  useToTokenSync,
-} from '@/hooks/trade/useTokenSync';
 import { useQuoteReceiveSync } from '@/hooks/trade/useQuoteReceiveSync';
-import type { SwapQuoteRequestPayload } from '@/lib/quotes.types';
+import { useCountUpValue } from '@/hooks/trade/useCountUpValue';
+import { SecurityRiskModal } from '@/components/trade/common/SecurityRiskModal';
+import { TradeTokenSelectorModal } from '@/components/trade/common/TradeTokenSelectorModal';
+import { TradeSendPanel } from '@/components/trade/common/TradeSendPanel';
+import { TradeReceivePanel } from '@/components/trade/common/TradeReceivePanel';
 import { Button } from '@/components/ui/Button';
-import {
-  resolveSwapperAddress,
-  toSmallestUnit,
-} from '@/lib/trade/swapUtils';
+import { buildSwapQuoteRequest } from '@/lib/trade/workspace';
 import { getQuoteErrorMessage } from '@/lib/trade/quoteError';
-import {
-  buildSwapQuoteRequest,
-  filterTokens,
-} from '@/lib/trade/workspace';
+import type { SwapQuoteRequestPayload } from '@/lib/quotes.types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatAmount, formatApproxUsd, formatUsd } from '@/lib/formatAmount';
-import type { SecurityLevel } from '@/lib/api';
-import type { WalletSelection } from '@/lib/receive-wallet';
 import { cn } from '@/lib/utils';
 
-type SelectorTarget = 'from' | 'to' | null;
-
 export function SwapWorkspace() {
-  const { primaryWallet, user, setShowAuthFlow } = useDynamicContext();
-  const walletAddress = primaryWallet?.address;
-
-  const [fromChainId, setFromChainId] = useState(DEFAULT_CHAIN_ID);
-  const [toChainId, setToChainId] = useState(DEFAULT_CHAIN_ID);
-  const [fromAmount, setFromAmount] = useState('0.0');
-  const [toAmount, setToAmount] = useState('0.0');
-  const [fromToken, setFromToken] = useState<string>('native');
-  const [toToken, setToToken] = useState<string>('');
-  const [selectorTarget, setSelectorTarget] = useState<SelectorTarget>(null);
-  const [networkMenuOpen, setNetworkMenuOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const deferredQuery = useDeferredValue(query);
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
-  const [valueMode, setValueMode] = useState<'token' | 'usd'>('token');
-  const [fromUsdInput, setFromUsdInput] = useState('');
-  const [showDangerModal, setShowDangerModal] = useState(false);
-  const [dangerProceedAccepted, setDangerProceedAccepted] = useState(false);
   const [hasReviewedQuote, setHasReviewedQuote] = useState(false);
-  const [receiveWalletSelection, setReceiveWalletSelection] =
-    useState<WalletSelection | null>(null);
-  const receiveWalletAddress = receiveWalletSelection?.address ?? null;
 
-  const {
-    chainTokens: fromChainTokens,
-    selectedChainKey: fromSelectedChainKey,
-    selectedChainIcon: fromSelectedChainIcon,
-    uniqueRuntimeNetworks: fromRuntimeNetworks,
-    loadingDynamicTokens: fromLoadingDynamicTokens,
-    importTokenByAddress: importFromTokenByAddress,
-  } = useSwapData({
-    chainId: fromChainId,
-    staticChains: SUPPORTED_CHAINS,
+  const form = useTokenPairForm({
+    onInvalidate: () => setHasReviewedQuote(false),
   });
 
   const {
-    chainTokens: toChainTokens,
-    selectedChainKey: toSelectedChainKey,
-    selectedChainIcon: toSelectedChainIcon,
-    uniqueRuntimeNetworks: toRuntimeNetworks,
-    loadingDynamicTokens: toLoadingDynamicTokens,
-    importTokenByAddress: importToTokenByAddress,
-  } = useSwapData({
-    chainId: toChainId,
-    staticChains: SUPPORTED_CHAINS,
-  });
-
-  const {
-    mutateAsync: checkTokenRisk,
-    data: risk,
-    error: riskMutationError,
-    reset: resetRiskCheck,
-  } = useTokenRiskMutation();
-
-  const riskError =
-    riskMutationError instanceof Error ? riskMutationError.message : null;
-
-  const clearRiskState = useCallback(() => {
-    setShowDangerModal(false);
-    setDangerProceedAccepted(false);
-    resetRiskCheck();
-  }, [resetRiskCheck]);
-
-  useFromTokenSync(fromChainTokens, fromToken, setFromToken);
-  useToTokenSync(toChainTokens, toToken, setToToken, clearRiskState);
-
-  const selectedFromToken = useMemo(
-    () => fromChainTokens.find((t) => t.address === fromToken),
-    [fromChainTokens, fromToken],
-  );
-
-  const selectedToToken = useMemo(
-    () => toChainTokens.find((t) => t.address === toToken),
-    [toChainTokens, toToken],
-  );
-
-  const hasTokenSelection = Boolean(selectedFromToken && selectedToToken);
-
-  const hasBlockingRisk = useMemo(
-    () => Boolean(risk && risk.securityLevel === 'danger'),
-    [risk],
-  );
-
-  const shouldEnforceDangerGuard = hasBlockingRisk && !dangerProceedAccepted;
-
-  const receiveRiskLevel = useMemo<SecurityLevel | null>(() => {
-    if (riskError) return 'caution';
-    if (!risk) return null;
-    return risk.securityLevel;
-  }, [risk, riskError]);
-
-  const hasReviewed = useMemo(() => Boolean(risk), [risk]);
-
-  // Token selector modal context
-  const activeChainTokens =
-    selectorTarget === 'to' ? toChainTokens : fromChainTokens;
-  const activeLoadingDynamicTokens =
-    selectorTarget === 'to' ? toLoadingDynamicTokens : fromLoadingDynamicTokens;
-  const activeImportTokenByAddress =
-    selectorTarget === 'to' ? importToTokenByAddress : importFromTokenByAddress;
-  const activeChainId = selectorTarget === 'to' ? toChainId : fromChainId;
-  const activeSelectedChainIcon =
-    selectorTarget === 'to' ? toSelectedChainIcon : fromSelectedChainIcon;
-  const activeSelectedChainKey =
-    selectorTarget === 'to' ? toSelectedChainKey : fromSelectedChainKey;
-  const runtimeNetworks =
-    fromRuntimeNetworks.length > 0 ? fromRuntimeNetworks : toRuntimeNetworks;
-
-  const filteredTokens = useMemo(() => {
-    return filterTokens(activeChainTokens, deferredQuery);
-  }, [deferredQuery, activeChainTokens]);
-
-  const activeTokenAddressSet = useMemo(
-    () =>
-      new Set(activeChainTokens.map((token) => token.address.toLowerCase())),
-    [activeChainTokens],
-  );
-
-  const importAddress = query.trim();
-  const hasTokenWithImportAddress = activeTokenAddressSet.has(
-    importAddress.toLowerCase(),
-  );
-  const canImport = isAddress(importAddress) && !hasTokenWithImportAddress;
-  const showImportOption =
-    importAddress.length > 0 &&
-    filteredTokens.length === 0 &&
-    !hasTokenWithImportAddress;
-
-  // Quote
-  const normalizedSwapper = useMemo(
-    () => resolveSwapperAddress(walletAddress),
-    [walletAddress],
-  );
-
-  const quoteAmount = useMemo(
-    () => toSmallestUnit(fromAmount, selectedFromToken?.decimals),
-    [fromAmount, selectedFromToken],
-  );
+    primaryWallet,
+    user,
+    setShowAuthFlow,
+    fromChainId,
+    toChainId,
+    fromAmount,
+    toAmount,
+    setToAmount,
+    selectedFromToken,
+    selectedToToken,
+    hasTokenSelection,
+    quoteAmount,
+    normalizedSwapper,
+    valueMode,
+    fromUsdInput,
+    receiveWalletSelection,
+    setReceiveWalletSelection,
+    receiveWalletAddress,
+    shouldEnforceDangerGuard,
+    showDangerModal,
+    setShowDangerModal,
+    risk,
+    receiveRiskLevel,
+    fromAmountUsdValue,
+    toAmountUsdValue,
+    fromSelectedChainIcon,
+    toSelectedChainIcon,
+    isSelectorOpen,
+    activeChainId,
+    activeSelectedChainIcon,
+    activeSelectedChainKey,
+    runtimeNetworks,
+    filteredTokens,
+    networkMenuOpen,
+    setNetworkMenuOpen,
+    showImportOption,
+    canImport,
+    importing,
+    importAddress,
+    importError,
+    activeLoadingDynamicTokens,
+    onFromAmountChange,
+    onFromUsdChange,
+    onFlipTokens,
+    onSelectToken,
+    onQueryChange,
+    onImportToken,
+    onModalChainSelect,
+    openSelector,
+    onDangerGoBack,
+    onDangerProceedAnyway,
+  } = form;
 
   const currentQuoteRequest = useMemo<SwapQuoteRequestPayload | null>(() => {
     if (
-      !hasReviewed ||
+      !form.hasReviewed ||
       !selectedFromToken ||
       !selectedToToken ||
       !quoteAmount ||
       shouldEnforceDangerGuard
-    ) {
+    )
       return null;
-    }
     return buildSwapQuoteRequest({
       amount: quoteAmount,
       fromChainId,
@@ -198,26 +97,23 @@ export function SwapWorkspace() {
       swapperAddress: normalizedSwapper,
     });
   }, [
+    form.hasReviewed,
     fromChainId,
-    shouldEnforceDangerGuard,
-    hasReviewed,
-    normalizedSwapper,
-    quoteAmount,
-    receiveWalletAddress,
+    toChainId,
     selectedFromToken,
     selectedToToken,
-    toChainId,
+    quoteAmount,
+    receiveWalletAddress,
+    normalizedSwapper,
+    shouldEnforceDangerGuard,
   ]);
-
-  const quoteRequest = hasReviewedQuote ? currentQuoteRequest : null;
 
   const {
     data: quote,
     error: quoteError,
     isFetching: isQuoteFetching,
-  } = useSwapQuote({
-    request: quoteRequest,
-  });
+  } = useSwapQuote({ request: hasReviewedQuote ? currentQuoteRequest : null });
+
   const quoteErrorMessage = useMemo(
     () => getQuoteErrorMessage(quoteError),
     [quoteError],
@@ -225,16 +121,10 @@ export function SwapWorkspace() {
 
   const shouldShowQuote =
     hasTokenSelection &&
-    hasReviewed &&
+    form.hasReviewed &&
     hasReviewedQuote &&
     !quoteErrorMessage &&
     !shouldEnforceDangerGuard;
-
-  const animatedToAmount = useCountUpValue(toAmount, {
-    enabled: shouldShowQuote && !isQuoteFetching,
-    durationMs: 800,
-    maxDecimals: selectedToToken?.decimals ?? 6,
-  });
 
   useQuoteReceiveSync(
     shouldShowQuote ? quote : null,
@@ -242,25 +132,10 @@ export function SwapWorkspace() {
     setToAmount,
   );
 
-  const { usdValue: fromAmountUsdValue } = useTokenUsdValue({
-    chainId: fromChainId,
-    tokenAddress: selectedFromToken?.address ?? null,
-    amount: fromAmount,
-    refetchIntervalMs: 60_000,
-  });
-
-  const { usdValue: fromOneTokenUsd } = useTokenUsdValue({
-    chainId: fromChainId,
-    tokenAddress: selectedFromToken?.address ?? null,
-    amount: '1',
-    refetchIntervalMs: 300_000,
-  });
-
-  const { usdValue: toAmountUsdValue } = useTokenUsdValue({
-    chainId: toChainId,
-    tokenAddress: selectedToToken?.address ?? null,
-    amount: toAmount,
-    refetchIntervalMs: 60_000,
+  const animatedToAmount = useCountUpValue(toAmount, {
+    enabled: shouldShowQuote && !isQuoteFetching,
+    durationMs: 800,
+    maxDecimals: selectedToToken?.decimals ?? 6,
   });
 
   const priceImpact = useMemo(() => {
@@ -294,140 +169,10 @@ export function SwapWorkspace() {
     toAmountUsdValue,
   ]);
 
-  const onFromAmountChange = useCallback((value: string) => {
-    setFromAmount(value);
-    const isEmpty =
-      value.trim() === '' || value.trim() === '0' || value.trim() === '0.0';
-    if (isEmpty) setToAmount('0.0');
-  }, []);
-
-  const onFromUsdChange = useCallback(
-    (value: string) => {
-      setFromUsdInput(value);
-      const numeric = Number(value);
-      if (!fromOneTokenUsd || fromOneTokenUsd <= 0 || Number.isNaN(numeric)) {
-        setFromAmount('0.0');
-        setToAmount('0.0');
-        return;
-      }
-      const tokenAmount = numeric / fromOneTokenUsd;
-      const tokenDecimals = selectedFromToken?.decimals ?? 6;
-      const normalized = Number.isFinite(tokenAmount)
-        ? parseFloat(tokenAmount.toFixed(tokenDecimals)).toString()
-        : '0.0';
-      setFromAmount(normalized);
-    },
-    [fromOneTokenUsd, selectedFromToken?.decimals],
+  const onToggleFromValueMode = useCallback(
+    () => form.onToggleFromValueMode(fromAmountUsdValue),
+    [form, fromAmountUsdValue],
   );
-
-  const onToggleFromValueMode = useCallback(() => {
-    const nextMode = valueMode === 'token' ? 'usd' : 'token';
-
-    if (nextMode === 'usd') {
-      if (fromAmountUsdValue && Number.isFinite(fromAmountUsdValue)) {
-        setFromUsdInput(fromAmountUsdValue.toFixed(2));
-      } else {
-        setFromUsdInput('');
-      }
-    }
-
-    setValueMode(nextMode);
-  }, [fromAmountUsdValue, valueMode]);
-
-  const onFlipTokens = useCallback(async () => {
-    if (!toToken) return;
-    setHasReviewedQuote(false);
-    clearRiskState();
-    setFromChainId(toChainId);
-    setToChainId(fromChainId);
-    setFromToken(toToken);
-    setToToken(fromToken);
-    setFromAmount(toAmount);
-    setToAmount('0.0');
-    setValueMode('token');
-    setFromUsdInput('');
-
-    try {
-      await checkTokenRisk({
-        chainId: fromChainId,
-        tokenAddress: fromToken,
-      });
-    } catch {}
-  }, [
-    checkTokenRisk,
-    clearRiskState,
-    fromChainId,
-    fromToken,
-    toAmount,
-    toChainId,
-    toToken,
-  ]);
-
-  const onSelectToken = useCallback(
-    async (address: string) => {
-      // Risk data is tied to the "to" token — only clear it when that changes.
-      if (selectorTarget === 'to') clearRiskState();
-      setHasReviewedQuote(false);
-
-      if (selectorTarget === 'from') {
-        // Changing the Send token invalidates any previous quote output
-        setFromToken(address);
-        setFromAmount('0.0');
-        setToAmount('0.0');
-      }
-      if (selectorTarget === 'to') {
-        setToToken(address);
-        setToAmount('0.0');
-      }
-      if (selectorTarget === 'from') {
-        setValueMode('token');
-        setFromUsdInput('');
-      }
-      setSelectorTarget(null);
-      setNetworkMenuOpen(false);
-      setQuery('');
-      setImportError(null);
-
-      if (selectorTarget !== 'to') return;
-
-      try {
-        await checkTokenRisk({
-          chainId: toChainId,
-          tokenAddress: address,
-        });
-      } catch {
-        // handled via mutation error state
-      }
-    },
-    [checkTokenRisk, clearRiskState, selectorTarget, toChainId],
-  );
-
-  const onQueryChange = useCallback((value: string) => {
-    setQuery(value);
-    setImportError(null);
-  }, []);
-
-  const onImportToken = useCallback(async () => {
-    if (!isAddress(importAddress)) {
-      setImportError('Enter a valid 0x token contract address.');
-      return;
-    }
-    setImporting(true);
-    setImportError(null);
-    try {
-      const checksummedAddress = getAddress(importAddress);
-      const imported = await activeImportTokenByAddress(checksummedAddress);
-      await onSelectToken(imported.address);
-    } catch (err) {
-      setImportError(
-        err instanceof Error && err.message
-          ? err.message
-          : 'Token not found or invalid token address.',
-      );
-    } finally {
-      setImporting(false);
-    }
-  }, [activeImportTokenByAddress, importAddress, onSelectToken]);
 
   const onPrimaryAction = useCallback(() => {
     if (!primaryWallet) {
@@ -445,46 +190,17 @@ export function SwapWorkspace() {
     }
     setHasReviewedQuote(true);
   }, [
-    currentQuoteRequest,
-    setHasReviewedQuote,
     primaryWallet,
     selectedFromToken,
     selectedToToken,
-    setShowAuthFlow,
     shouldEnforceDangerGuard,
+    currentQuoteRequest,
+    setShowAuthFlow,
+    setShowDangerModal,
   ]);
 
-  const onDangerGoBack = useCallback(() => {
-    setToToken('');
-    setToAmount('0.0');
-    clearRiskState();
-  }, [clearRiskState]);
-
-  const onDangerProceedAnyway = useCallback(() => {
-    setDangerProceedAccepted(true);
-    setShowDangerModal(false);
-  }, []);
-
-  const onModalChainSelect = useCallback(
-    (nextChainId: number) => {
-      setQuery('');
-      setImportError(null);
-      if (selectorTarget === 'from') setFromChainId(nextChainId);
-      if (selectorTarget === 'to') setToChainId(nextChainId);
-    },
-    [selectorTarget],
-  );
-
-  const openSelector = useCallback((target: Exclude<SelectorTarget, null>) => {
-    setHasReviewedQuote(false);
-    setQuery('');
-    setImportError(null);
-    setNetworkMenuOpen(false);
-    setSelectorTarget(target);
-  }, []);
-
-  const isSelectorOpen = Boolean(selectorTarget);
   const receiveValueMode = selectedToToken ? valueMode : 'token';
+  const isLoading = isQuoteFetching;
 
   return (
     <section className='relative h-full'>
@@ -499,24 +215,17 @@ export function SwapWorkspace() {
             className='absolute inset-0 flex flex-col gap-4 mx-auto min-[1441px]:min-w-110 xl:max-w-95 min-[1441px]:max-w-max sm:max-w-90 w-full'
           >
             <div className='flex flex-col gap-1'>
-              <TradeTokenPanel
-                label='Send'
-                amount={valueMode === 'token' ? fromAmount : fromUsdInput}
-                amountDisplayMode={valueMode}
+              <TradeSendPanel
+                amount={fromAmount}
+                usdInput={fromUsdInput}
+                valueMode={valueMode}
                 token={selectedFromToken}
                 usdValue={fromAmountUsdValue}
-                selectedChainIcon={fromSelectedChainIcon}
+                chainIcon={fromSelectedChainIcon}
                 onSelectToken={() => openSelector('from')}
-                editable
-                onAmountChange={
-                  valueMode === 'token' ? onFromAmountChange : onFromUsdChange
-                }
-                bottomLabel={
-                  valueMode === 'usd' && selectedFromToken
-                    ? `~${formatAmount(fromAmount)} ${selectedFromToken.symbol}`
-                    : undefined
-                }
-                onToggleValueDisplay={onToggleFromValueMode}
+                onAmountChange={onFromAmountChange}
+                onUsdChange={onFromUsdChange}
+                onToggleValueMode={onToggleFromValueMode}
               />
 
               <Button
@@ -527,30 +236,18 @@ export function SwapWorkspace() {
                 <ArrowDownUp className='text-(--arrow-icon-btn) size-4' />
               </Button>
 
-              <TradeTokenPanel
-                label='Receive'
-                amount={
-                  receiveValueMode === 'usd'
-                    ? formatUsd(toAmountUsdValue)
-                    : animatedToAmount
-                }
-                amountDisplayMode={receiveValueMode}
+              <TradeReceivePanel
+                amount={toAmount}
+                displayAmount={animatedToAmount}
+                valueMode={valueMode}
                 token={selectedToToken}
                 usdValue={toAmountUsdValue}
-                selectedChainIcon={toSelectedChainIcon}
+                chainIcon={toSelectedChainIcon}
                 onSelectToken={() => openSelector('to')}
-                bottomLabel={
-                  receiveValueMode === 'usd' && selectedToToken
-                    ? `~${formatAmount(toAmount)} ${selectedToToken.symbol}`
-                    : (priceImpact?.usdLabel ??
-                      formatApproxUsd(toAmountUsdValue) ??
-                      undefined)
-                }
-                impactPctLabel={priceImpact?.pctLabel}
-                impactDollarTooltip={priceImpact?.dollarTooltip}
-                onReceiveWalletChange={setReceiveWalletSelection}
-                receiveWalletSelection={receiveWalletSelection}
                 loading={isQuoteFetching && shouldShowQuote}
+                priceImpact={priceImpact}
+                receiveWalletSelection={receiveWalletSelection}
+                onReceiveWalletChange={setReceiveWalletSelection}
                 riskLevel={receiveRiskLevel}
                 riskReasons={risk?.reasons}
                 animateRiskBorder={Boolean(receiveRiskLevel)}
@@ -597,13 +294,13 @@ export function SwapWorkspace() {
               disabled={
                 primaryWallet
                   ? !hasTokenSelection ||
-                    isQuoteFetching ||
+                    isLoading ||
                     Boolean(quoteErrorMessage)
                   : false
               }
             >
               {primaryWallet || user
-                ? isQuoteFetching
+                ? isLoading
                   ? 'Fetching Quote...'
                   : quoteErrorMessage
                     ? 'No Route Available'
@@ -622,7 +319,7 @@ export function SwapWorkspace() {
           >
             <TradeTokenSelectorModal
               open={isSelectorOpen}
-              query={query}
+              query={form.query}
               onQueryChange={onQueryChange}
               chainId={activeChainId}
               selectedChainIcon={activeSelectedChainIcon}
@@ -640,10 +337,7 @@ export function SwapWorkspace() {
               importAddress={importAddress}
               onImportToken={onImportToken}
               importError={importError}
-              onClose={() => {
-                setSelectorTarget(null);
-                setNetworkMenuOpen(false);
-              }}
+              onClose={form.closeSelector}
             />
           </motion.div>
         )}
