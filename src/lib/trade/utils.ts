@@ -7,14 +7,6 @@ import {
   TOKEN_PERFORMANCE_ROW_CONFIG,
 } from '@/lib/constant/swap';
 
-export function dedupeTokens(tokens: UiToken[]) {
-  const map = new Map<string, UiToken>();
-  for (const token of tokens) {
-    map.set(token.address.toLowerCase(), token);
-  }
-  return Array.from(map.values());
-}
-
 export function displayBalance(value?: string) {
   if (!value) return '0.0000';
   return value;
@@ -34,6 +26,7 @@ export function formatPercentChange(value?: number | null) {
       className: 'text-[var(--neutral-text-textWeak)]',
     };
   }
+
   const numeric = Number(value);
   return {
     value: `${numeric > 0 ? '+' : ''}${numeric.toFixed(2)}%`,

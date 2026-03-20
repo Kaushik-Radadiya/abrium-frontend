@@ -4,8 +4,8 @@ import { Sidebar } from '@/components/Sidebar';
 import './globals.css';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { WalletConnectCard } from '@/components/WalletConnectCard';
-import { ChevronRight } from 'lucide-react';
 import { inter } from '@/style/font';
+import Breadcrumbs from '@/components/Breadcrums';
 
 export const metadata: Metadata = {
   title: 'Abrium | High-Performance Token Execution',
@@ -32,26 +32,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang='en' className={inter.className}>
       <body
-        className="flex h-screen overflow-hidden bg-(--bg) text-(--text) antialiased"
+        className='flex h-screen overflow-hidden bg-(--bg) text-(--text) antialiased'
         suppressHydrationWarning
       >
         <AppProviders>
           <Sidebar />
-          <div className="flex flex-col h-full w-full">
-            <header className="flex w-full px-6 py-3 items-center justify-between border-b border-(--topbar-border)">
-              <div className="text-base text-(--neutral-text-textWeak) flex items-center gap-3">
-                App
-                <ChevronRight width={16} height={16} />
-                <span className="text-(--neutral-text-textStrong)">Swap</span>
-              </div>
-              <div className="flex items-center gap-2.5">
+          <div className='flex h-full w-full flex-col'>
+            <header className='flex w-full items-center justify-between border-b border-(--topbar-border) px-6 py-3'>
+              <Breadcrumbs />
+              <div className='flex items-center gap-2.5'>
                 <ThemeToggle />
                 <WalletConnectCard />
               </div>
             </header>
-            <div className="overflow-auto h-[calc(100vh-65px)]">{children}</div>
+            <div className='h-[calc(100vh-65px)] overflow-auto'>{children}</div>
           </div>
         </AppProviders>
       </body>

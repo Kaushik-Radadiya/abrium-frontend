@@ -6,25 +6,29 @@ import { getAddress, isAddress } from 'viem';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { DEFAULT_CHAIN_ID, SUPPORTED_CHAINS } from '@/lib/chains';
 import { useTokenRiskMutation } from '@/lib/api-hooks';
-import { SecurityRiskModal } from '@/components/swap/SecurityRiskModal';
-import { SwapTokenPanel } from '@/components/swap/SwapTokenPanel';
-import { TokenSelectorModal } from '@/components/swap/TokenSelectorModal';
-import { useSwapData } from '@/components/swap/hooks/useSwapData';
-import { useTokenUsdValue } from '@/components/swap/hooks/useTokenUsdValue';
-import { useSwapQuote } from '@/components/swap/hooks/useSwapQuote';
-import { useCountUpValue } from '@/components/swap/hooks/useCountUpValue';
+import { SecurityRiskModal } from '@/components/trade/common/SecurityRiskModal';
+import { TradeTokenPanel } from '@/components/trade/common/TradeTokenPanel';
+import { TradeTokenSelectorModal } from '@/components/trade/common/TradeTokenSelectorModal';
+import { useSwapData } from '@/hooks/trade/useSwapData';
+import { useTokenUsdValue } from '@/hooks/trade/useTokenUsdValue';
+import { useSwapQuote } from '@/hooks/trade/useSwapQuote';
+import { useCountUpValue } from '@/hooks/trade/useCountUpValue';
 import {
   useFromTokenSync,
   useToTokenSync,
-} from '@/components/swap/hooks/useTokenSync';
-import { useQuoteReceiveSync } from '@/components/swap/hooks/useQuoteReceiveSync';
+} from '@/hooks/trade/useTokenSync';
+import { useQuoteReceiveSync } from '@/hooks/trade/useQuoteReceiveSync';
 import type { SwapQuoteRequestPayload } from '@/lib/quotes.types';
 import { Button } from '@/components/ui/Button';
 import {
   resolveSwapperAddress,
   toSmallestUnit,
-} from '@/components/swap/utils/swapUtils';
-import { getQuoteErrorMessage } from '@/components/swap/utils/quoteError';
+} from '@/lib/trade/swapUtils';
+import { getQuoteErrorMessage } from '@/lib/trade/quoteError';
+import {
+  buildSwapQuoteRequest,
+  filterTokens,
+} from '@/lib/trade/workspace';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatAmount, formatApproxUsd, formatUsd } from '@/lib/formatAmount';
 import type { SecurityLevel } from '@/lib/api';
@@ -144,14 +148,7 @@ export function SwapWorkspace() {
     fromRuntimeNetworks.length > 0 ? fromRuntimeNetworks : toRuntimeNetworks;
 
   const filteredTokens = useMemo(() => {
-    const value = deferredQuery.trim().toLowerCase();
-    if (!value) return activeChainTokens;
-    return activeChainTokens.filter(
-      (token) =>
-        token.symbol.toLowerCase().includes(value) ||
-        token.name.toLowerCase().includes(value) ||
-        token.address.toLowerCase().includes(value),
-    );
+    return filterTokens(activeChainTokens, deferredQuery);
   }, [deferredQuery, activeChainTokens]);
 
   const activeTokenAddressSet = useMemo(
@@ -191,15 +188,15 @@ export function SwapWorkspace() {
     ) {
       return null;
     }
-    return {
+    return buildSwapQuoteRequest({
       amount: quoteAmount,
-      recipient: receiveWalletAddress ?? normalizedSwapper,
-      swapper: normalizedSwapper,
-      tokenIn: selectedFromToken.address,
-      tokenInChainId: fromChainId,
-      tokenOut: selectedToToken.address,
-      tokenOutChainId: toChainId,
-    };
+      fromChainId,
+      fromTokenAddress: selectedFromToken.address,
+      toChainId,
+      toTokenAddress: selectedToToken.address,
+      receiveWalletAddress,
+      swapperAddress: normalizedSwapper,
+    });
   }, [
     fromChainId,
     shouldEnforceDangerGuard,
@@ -502,7 +499,7 @@ export function SwapWorkspace() {
             className='absolute inset-0 flex flex-col gap-4 mx-auto min-[1441px]:min-w-110 xl:max-w-95 min-[1441px]:max-w-max sm:max-w-90 w-full'
           >
             <div className='flex flex-col gap-1'>
-              <SwapTokenPanel
+              <TradeTokenPanel
                 label='Send'
                 amount={valueMode === 'token' ? fromAmount : fromUsdInput}
                 amountDisplayMode={valueMode}
@@ -530,7 +527,7 @@ export function SwapWorkspace() {
                 <ArrowDownUp className='text-(--arrow-icon-btn) size-4' />
               </Button>
 
-              <SwapTokenPanel
+              <TradeTokenPanel
                 label='Receive'
                 amount={
                   receiveValueMode === 'usd'
@@ -623,7 +620,7 @@ export function SwapWorkspace() {
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className='absolute inset-0 flex flex-col gap-4'
           >
-            <TokenSelectorModal
+            <TradeTokenSelectorModal
               open={isSelectorOpen}
               query={query}
               onQueryChange={onQueryChange}

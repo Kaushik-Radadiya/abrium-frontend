@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import type { SwapQuoteResponsePayload } from '@/lib/quotes.types';
 import type { UiToken } from '@/lib/tokens';
-import { formatAmountFromSmallest } from '@/components/swap/utils/swapUtils';
+import { formatAmountFromSmallest } from '@/lib/trade/swapUtils';
 
 export function useQuoteReceiveSync(
   quote: SwapQuoteResponsePayload | null | undefined,

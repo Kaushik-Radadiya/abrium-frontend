@@ -1,17 +1,15 @@
 'use client';
 
 import { type UIEvent, useCallback, useMemo, useState } from 'react';
-import moment from 'moment';
 import { SupportedChain, getChainKey } from '@/lib/chains';
 import { UiToken } from '@/lib/tokens';
 import { getChainIconUrl, getTokenIconUrl } from '@/lib/icons';
-import { IconWithFallback } from '@/components/swap/IconWithFallback';
+import { IconWithFallback } from '@/components/trade/common/IconWithFallback';
 import {
   buildTokenPerformanceRows,
-  displayBalance,
   formatPercentChange,
   formatPriceDetails,
-} from '@/components/swap/utils';
+} from '@/lib/trade/utils';
 import { ChevronDownIcon, SearchIcon, ChevronLeftIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
@@ -81,7 +79,7 @@ function getSecurityBadgeClassName(level?: SecurityLevel | null) {
   }
 }
 
-export function TokenSelectorModal({
+export function TradeTokenSelectorModal({
   open,
   query,
   onQueryChange,

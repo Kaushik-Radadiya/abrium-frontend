@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { UiToken } from '@/lib/tokens';
 import { getTokenIconUrl } from '@/lib/icons';
-import { IconWithFallback } from '@/components/swap/IconWithFallback';
+import { IconWithFallback } from '@/components/trade/common/IconWithFallback';
 import { getChain } from '@/lib/chains';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';

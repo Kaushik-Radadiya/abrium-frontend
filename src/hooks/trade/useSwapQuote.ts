@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { SwapQuoteRequestPayload } from '@/lib/quotes.types';
-import { useDebouncedValue } from '@/components/swap/hooks/useDebouncedValue';
+import { useDebouncedValue } from '@/hooks/trade/useDebouncedValue';
 import {
   fetchSwapQuote,
   LiFiQuoteError,

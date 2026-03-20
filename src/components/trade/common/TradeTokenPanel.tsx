@@ -3,7 +3,7 @@
 import { ArrowDownUp } from 'lucide-react';
 import { useState } from 'react';
 import type { UiToken } from '@/lib/tokens';
-import { TokenPill } from '@/components/swap/TokenPill';
+import { TokenPill } from '@/components/trade/common/TokenPill';
 import { WalletTrigger } from '@/components/WalletTrigger';
 import { formatApproxUsd } from '@/lib/formatAmount';
 import { OverflowTooltipText } from '@/components/ui/OverflowTooltipText';
@@ -54,7 +54,7 @@ function formatPanelAmount(
   return RECEIVE_AMOUNT_FORMATTER.format(parsedAmount);
 }
 
-export function SwapTokenPanel({
+export function TradeTokenPanel({
   label,
   amount,
   amountDisplayMode = 'token',

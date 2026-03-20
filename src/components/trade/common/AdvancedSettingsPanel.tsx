@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { Button } from '../ui/Button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from '@/components/ui/Button';
 import { Info, Settings } from 'lucide-react';
-import { PillRadioGroup } from '../ui/radio-group';
-import { Label } from '../ui/label';
+import { PillRadioGroup } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { SLIPPAGE_OPTIONS, TRANSACTION_DEADLINE_OPTIONS } from '@/lib/constant/swap';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const AdvancedSettingsPanel = () => {
     const [settingOpen, setSettingOpen] = useState(false);

@@ -10,7 +10,7 @@ import {
   importCatalogToken,
 } from '@/lib/api.requests';
 import { getChainIconUrl } from '@/lib/icons';
-import { dedupeTokens } from '@/components/swap/utils';
+import { dedupeTokens } from '@/lib/trade/workspace';
 
 type RuntimeNetwork = {
   chain: SupportedChain;

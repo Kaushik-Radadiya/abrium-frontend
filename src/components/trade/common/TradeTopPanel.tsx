@@ -1,5 +1,8 @@
+'use client';
+
 import { ChartCandlestick } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { usePathname, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
 import {
   Select,
   SelectContent,
@@ -11,11 +14,20 @@ import {
 import { TRADE_OPTIONS } from '@/lib/constant/swap';
 import AdvancedSettingsPanel from './AdvancedSettingsPanel';
 
-const SwapTopPanel = () => {
+const TradeTopPanel = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const currentMode = pathname?.includes('/limit') ? 'limit' : 'swap';
+
   return (
     <div className="flex items-center justify-between mb-6">
       <div>
-        <Select defaultValue="swap">
+        <Select
+          value={currentMode}
+          onValueChange={(mode) => {
+            router.push(mode === 'limit' ? '/limit' : '/swap');
+          }}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select a fruit" />
           </SelectTrigger>
@@ -41,4 +53,4 @@ const SwapTopPanel = () => {
   );
 };
 
-export default SwapTopPanel;
+export default TradeTopPanel;
