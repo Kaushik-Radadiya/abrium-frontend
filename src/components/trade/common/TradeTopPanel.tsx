@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TRADE_OPTIONS } from '@/lib/constant/swap';
+import { TRADE_OPTIONS } from '@/lib/constant/trade';
 import AdvancedSettingsPanel from './AdvancedSettingsPanel';
 
 const TradeTopPanel = () => {
@@ -20,7 +20,7 @@ const TradeTopPanel = () => {
   const currentMode = pathname?.includes('/limit') ? 'limit' : 'swap';
 
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className='flex items-center justify-between mb-6'>
       <div>
         <Select
           value={currentMode}
@@ -28,8 +28,8 @@ const TradeTopPanel = () => {
             router.push(mode === 'limit' ? '/limit' : '/swap');
           }}
         >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a fruit" />
+          <SelectTrigger className='w-full'>
+            <SelectValue placeholder='Select a fruit' />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -42,9 +42,9 @@ const TradeTopPanel = () => {
           </SelectContent>
         </Select>
       </div>
-      <div className="flex items-center leading-base gap-2">
+      <div className='flex items-center leading-base gap-2'>
         <Button>View Orders</Button>
-        <Button variant="icon">
+        <Button variant='icon'>
           <ChartCandlestick size={16} />
         </Button>
         <AdvancedSettingsPanel />

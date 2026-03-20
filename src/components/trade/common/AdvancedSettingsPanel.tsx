@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Info, Settings } from 'lucide-react';
 import { PillRadioGroup } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { SLIPPAGE_OPTIONS, TRANSACTION_DEADLINE_OPTIONS } from '@/lib/constant/swap';
+import { SLIPPAGE_OPTIONS, TRANSACTION_DEADLINE_OPTIONS } from '@/lib/constant/trade';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const AdvancedSettingsPanel = () => {

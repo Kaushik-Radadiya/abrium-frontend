@@ -5,7 +5,7 @@ import {
   CHANGE_POSITIVE_CLASS,
   type PerformanceRow,
   TOKEN_PERFORMANCE_ROW_CONFIG,
-} from '@/lib/constant/swap';
+} from '@/lib/constant/trade';
 
 export function displayBalance(value?: string) {
   if (!value) return '0.0000';
@@ -51,4 +51,44 @@ export function buildTokenPerformanceRows(token: UiToken): PerformanceRow[] {
       valueClassName: `font-medium ${formatted.className}`,
     };
   });
+}
+
+
+
+export function buildPriceImpact(params: {
+  shouldShowQuote: boolean;
+  isQuoteFetching: boolean;
+  hasQuote: boolean;
+  fromAmountUsdValue: number | null;
+  toAmountUsdValue: number | null;
+}) {
+  const {
+    shouldShowQuote,
+    isQuoteFetching,
+    hasQuote,
+    fromAmountUsdValue,
+    toAmountUsdValue,
+  } = params;
+
+  if (!shouldShowQuote || isQuoteFetching || !hasQuote) return undefined;
+
+  const fromUSD = fromAmountUsdValue;
+  const toUSD = toAmountUsdValue;
+  if (!fromUSD || !toUSD || fromUSD <= 0) return undefined;
+
+  const diff = toUSD - fromUSD;
+  const pct = (diff / fromUSD) * 100;
+  const pctSign = diff < 0 ? '-' : '';
+  const toUSDDecimals =
+    toUSD >= 0.01 ? 2 : Math.ceil(-Math.log10(Math.abs(toUSD))) + 1;
+  const absDiff = Math.abs(diff);
+  const diffDecimals =
+    absDiff === 0 ? 2 : absDiff >= 0.01 ? 2 : Math.ceil(-Math.log10(absDiff)) + 1;
+  const diffSign = diff < 0 ? '-' : '+';
+
+  return {
+    usdLabel: `~$${toUSD.toFixed(toUSDDecimals)}`,
+    pctLabel: `(${pctSign}${Math.abs(pct).toFixed(2)}%)`,
+    dollarTooltip: `(${diffSign}$${absDiff.toFixed(diffDecimals)})`,
+  };
 }
