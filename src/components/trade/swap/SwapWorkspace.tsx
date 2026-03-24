@@ -1,20 +1,18 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTokenPairForm } from '@/hooks/trade/useTokenPairForm';
-import { useSwapQuote } from '@/hooks/trade/useSwapQuote';
-import { useQuoteReceiveSync } from '@/hooks/trade/useQuoteReceiveSync';
+import { useRankedRoutesQuery } from '@/hooks/trade/useRankedRoutesQuery';
 import { useCountUpValue } from '@/hooks/trade/useCountUpValue';
 import { SecurityRiskModal } from '@/components/trade/common/SecurityRiskModal';
 import { SwapMainView } from '@/components/trade/swap/SwapMainView';
 import { SwapSelectorView } from '@/components/trade/swap/SwapSelectorView';
-import { buildSwapQuoteRequest } from '@/lib/trade/workspace';
 import { getQuoteErrorMessage } from '@/lib/trade/quoteError';
-import type { SwapQuoteRequestPayload } from '@/lib/quotes.types';
 import { AnimatePresence } from 'framer-motion';
 import { buildPriceImpact } from '@/lib/trade/utils';
 import { useRouter } from 'next/navigation';
 import { useSwapReviewStore } from '@/lib/swapReviewStore';
+import { formatAmountFromSmallest } from '@/lib/trade/swapUtils';
 
 export function SwapWorkspace() {
   const router = useRouter();
@@ -43,7 +41,6 @@ export function SwapWorkspace() {
     fromUsdInput,
     receiveWalletSelection,
     setReceiveWalletSelection,
-    receiveWalletAddress,
     shouldEnforceDangerGuard,
     showDangerModal,
     setShowDangerModal,
@@ -79,7 +76,7 @@ export function SwapWorkspace() {
     onDangerProceedAnyway,
   } = form;
 
-  const currentQuoteRequest = useMemo<SwapQuoteRequestPayload | null>(() => {
+  const currentRouteRequest = useMemo(() => {
     if (
       !form.hasReviewed ||
       !selectedFromToken ||
@@ -88,15 +85,14 @@ export function SwapWorkspace() {
       shouldEnforceDangerGuard
     )
       return null;
-    return buildSwapQuoteRequest({
-      amount: quoteAmount,
+    return {
       fromChainId,
-      fromTokenAddress: selectedFromToken.address,
       toChainId,
-      toTokenAddress: selectedToToken.address,
-      receiveWalletAddress,
-      swapperAddress: normalizedSwapper,
-    });
+      fromToken: selectedFromToken.address,
+      toToken: selectedToToken.address,
+      fromAmount: quoteAmount,
+      userAddress: normalizedSwapper,
+    };
   }, [
     form.hasReviewed,
     fromChainId,
@@ -104,37 +100,42 @@ export function SwapWorkspace() {
     selectedFromToken,
     selectedToToken,
     quoteAmount,
-    receiveWalletAddress,
     normalizedSwapper,
     shouldEnforceDangerGuard,
   ]);
 
   const {
-    data: quote,
-    error: quoteError,
-    isFetching: isQuoteFetching,
-  } = useSwapQuote({ request: hasReviewedQuote ? currentQuoteRequest : null });
+    data: bestRoute,
+    error: routeError,
+    isFetching: isBestRouteFetching,
+  } = useRankedRoutesQuery(
+    hasReviewedQuote ? currentRouteRequest : null,
+  );
 
   const quoteErrorMessage = useMemo(
-    () => getQuoteErrorMessage(quoteError),
-    [quoteError],
+    () => getQuoteErrorMessage(routeError),
+    [routeError],
   );
 
   const shouldShowQuote =
     hasTokenSelection &&
     form.hasReviewed &&
     hasReviewedQuote &&
+    Boolean(bestRoute) &&
     !quoteErrorMessage &&
     !shouldEnforceDangerGuard;
 
-  useQuoteReceiveSync(
-    shouldShowQuote ? quote : null,
-    selectedToToken,
-    setToAmount,
-  );
+  useEffect(() => {
+    if (!shouldShowQuote || !bestRoute || !selectedToToken) return;
+    const nextAmount = formatAmountFromSmallest(
+      bestRoute.toAmount,
+      selectedToToken.decimals,
+    );
+    setToAmount((current) => (current === nextAmount ? current : nextAmount));
+  }, [shouldShowQuote, bestRoute, selectedToToken, setToAmount]);
 
   const animatedToAmount = useCountUpValue(toAmount, {
-    enabled: shouldShowQuote && !isQuoteFetching,
+    enabled: shouldShowQuote && !isBestRouteFetching,
     durationMs: 800,
     maxDecimals: selectedToToken?.decimals ?? 6,
   });
@@ -142,15 +143,15 @@ export function SwapWorkspace() {
   const priceImpact = useMemo(() => {
     return buildPriceImpact({
       shouldShowQuote,
-      isQuoteFetching,
-      hasQuote: Boolean(quote),
+      isQuoteFetching: isBestRouteFetching,
+      hasQuote: Boolean(bestRoute),
       fromAmountUsdValue,
       toAmountUsdValue,
     });
   }, [
     shouldShowQuote,
-    isQuoteFetching,
-    quote,
+    isBestRouteFetching,
+    bestRoute,
     fromAmountUsdValue,
     toAmountUsdValue,
   ]);
@@ -170,13 +171,15 @@ export function SwapWorkspace() {
       setShowDangerModal(true);
       return;
     }
-    if (!currentQuoteRequest) {
+    if (!currentRouteRequest) {
       setHasReviewedQuote(false);
       return;
     }
-    if (hasReviewedQuote && quote) {
+    if (hasReviewedQuote && bestRoute) {
       setReview({
-        quote,
+        bestRoute,
+        fromAmountUSD: fromAmountUsdValue,
+        toAmountUSD: toAmountUsdValue,
         fromSymbol: selectedFromToken.symbol,
         toSymbol: selectedToToken.symbol,
         fromDecimals: selectedFromToken.decimals,
@@ -191,9 +194,11 @@ export function SwapWorkspace() {
     selectedFromToken,
     selectedToToken,
     shouldEnforceDangerGuard,
-    currentQuoteRequest,
+    currentRouteRequest,
     hasReviewedQuote,
-    quote,
+    bestRoute,
+    fromAmountUsdValue,
+    toAmountUsdValue,
     setShowAuthFlow,
     setShowDangerModal,
     setReview,
@@ -217,7 +222,7 @@ export function SwapWorkspace() {
             toSelectedChainIcon={toSelectedChainIcon}
             toAmount={toAmount}
             animatedToAmount={animatedToAmount}
-            isQuoteFetching={isQuoteFetching}
+            isQuoteFetching={isBestRouteFetching}
             shouldShowQuote={shouldShowQuote}
             priceImpact={priceImpact}
             receiveWalletSelection={receiveWalletSelection}

@@ -133,10 +133,12 @@ export function SwapMainView({
       >
         {primaryWallet || user
           ? isLoading
-            ? 'Fetching Quote...'
+            ? 'Fetching Best Route...'
             : quoteErrorMessage
               ? 'No Route Available'
-              : 'Review Swap'
+              : shouldShowQuote
+                ? 'Confirm Swap'
+                : 'Review Swap'
           : 'Connect Wallet'}
       </Button>
     </motion.div>

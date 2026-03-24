@@ -1,10 +1,12 @@
 'use client';
 
 import { createContext, useContext, useState } from 'react';
-import type { SwapQuoteResponsePayload } from '@/lib/quotes.types';
+import type { NormalizedRoute } from '@/lib/routeDecisionService';
 
 type SwapReviewPayload = {
-  quote: SwapQuoteResponsePayload;
+  bestRoute: NormalizedRoute;
+  fromAmountUSD: number | null;
+  toAmountUSD: number | null;
   fromSymbol: string;
   toSymbol: string;
   fromDecimals: number;

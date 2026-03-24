@@ -16,7 +16,9 @@ export default function SwapReviewInterceptedPage() {
   return (
     <SwapReviewPanel
       open
-      quote={review.quote}
+      bestRoute={review.bestRoute}
+      fromAmountUSD={review.fromAmountUSD}
+      toAmountUSD={review.toAmountUSD}
       fromSymbol={review.fromSymbol}
       toSymbol={review.toSymbol}
       fromDecimals={review.fromDecimals}
