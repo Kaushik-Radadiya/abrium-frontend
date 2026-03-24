@@ -1,5 +1,11 @@
-import { createConfig, getQuote } from '@lifi/sdk';
+import { createConfig, getQuote, getRoutes } from '@lifi/sdk';
 import type { LiFiStep, Step } from '@lifi/types';
+import {
+  normalizeQuote,
+  rankRoutes,
+  explainRoute,
+} from '@/lib/routeDecisionService';
+import type { NormalizedRoute } from '@/lib/routeDecisionService';
 
 const LIFI_API_KEY = process.env.NEXT_PUBLIC_LIFI_API_KEY ?? '';
 const LIFI_INTEGRATOR =
@@ -212,4 +218,31 @@ export async function fetchSwapQuote(
       .trim();
     throw new LiFiQuoteError(cleaned || raw);
   }
+}
+
+export async function fetchBestRoute(
+  payload: SwapQuoteRequestPayload,
+): Promise<NormalizedRoute | null> {
+  const slippage = normalizeSlippage(payload.slippage);
+  const recipient = payload.recipient ?? payload.swapper;
+
+  const result = await getRoutes({
+    fromChainId: payload.tokenInChainId,
+    toChainId: payload.tokenOutChainId,
+    fromTokenAddress: toApiTokenAddress(payload.tokenIn),
+    toTokenAddress: toApiTokenAddress(payload.tokenOut),
+    fromAmount: payload.amount,
+    fromAddress: payload.swapper,
+    toAddress: recipient,
+    options: slippage !== undefined ? { slippage } : undefined,
+  });
+
+  if (!result.routes.length) return null;
+
+  const normalized = result.routes.map((r) => normalizeQuote(r, 'lifi'));
+  const { ranked } = rankRoutes(normalized);
+  if (!ranked.length) return null;
+
+  const best = ranked[0];
+  return { ...best, explanation: explainRoute(best, 0) };
 }

@@ -13,8 +13,12 @@ import { getQuoteErrorMessage } from '@/lib/trade/quoteError';
 import type { SwapQuoteRequestPayload } from '@/lib/quotes.types';
 import { AnimatePresence } from 'framer-motion';
 import { buildPriceImpact } from '@/lib/trade/utils';
+import { useRouter } from 'next/navigation';
+import { useSwapReviewStore } from '@/lib/swapReviewStore';
 
 export function SwapWorkspace() {
+  const router = useRouter();
+  const { setReview } = useSwapReviewStore();
   const [hasReviewedQuote, setHasReviewedQuote] = useState(false);
 
   const form = useTokenPairForm({
@@ -170,6 +174,17 @@ export function SwapWorkspace() {
       setHasReviewedQuote(false);
       return;
     }
+    if (hasReviewedQuote && quote) {
+      setReview({
+        quote,
+        fromSymbol: selectedFromToken.symbol,
+        toSymbol: selectedToToken.symbol,
+        fromDecimals: selectedFromToken.decimals,
+        toDecimals: selectedToToken.decimals,
+      });
+      router.push('/swap/review');
+      return;
+    }
     setHasReviewedQuote(true);
   }, [
     primaryWallet,
@@ -177,8 +192,12 @@ export function SwapWorkspace() {
     selectedToToken,
     shouldEnforceDangerGuard,
     currentQuoteRequest,
+    hasReviewedQuote,
+    quote,
     setShowAuthFlow,
     setShowDangerModal,
+    setReview,
+    router,
   ]);
 
   return (
