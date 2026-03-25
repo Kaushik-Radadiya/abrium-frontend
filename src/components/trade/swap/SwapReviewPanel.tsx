@@ -1,10 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useSignIntent } from '@/lib/eip712';
 import type { NormalizedRoute } from '@/lib/routeDecisionService';
-import type { SignedIntent } from '@/lib/intent.types';
+import { cn } from '@/lib/utils';
+import { jetBrainsMono } from '@/style/font';
+import { SignedIntent } from '@/lib/intent.types';
 
 type Props = {
   open: boolean;
@@ -64,7 +74,9 @@ function SwapReviewPanelInner({
       setSigned(result);
       setSignStep('signed');
     } catch (err: unknown) {
-      setSignError(err instanceof Error ? err.message : 'Signing failed or rejected');
+      setSignError(
+        err instanceof Error ? err.message : 'Signing failed or rejected',
+      );
       setSignStep('error');
     }
   }
@@ -79,65 +91,59 @@ function SwapReviewPanelInner({
   const isCross = best.isCrossChain;
   const fromFormatted = formatAmount(best.fromAmount, fromDecimals);
   const toFormatted = formatAmount(best.toAmount, toDecimals);
-  const otherChargesUSD = Math.max(
-    0,
-    best.totalFeeUSD - best.gasFeeUSD - best.bridgeFeeUSD - best.protocolFeeUSD,
-  );
 
   return (
-    <>
-      {/* Backdrop */}
-      <motion.div
-        key='review-backdrop'
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.18 }}
-        className='fixed inset-0 z-40 bg-black/60 backdrop-blur-sm'
-        onClick={handleClose}
-      />
-
-      {/* Panel */}
-      <motion.div
-        key='review-panel'
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 20 }}
-        transition={{ duration: 0.18, ease: 'easeOut' }}
-        className='fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-110 max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl sm:inset-x-0 sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2 bg-[#0f0f1a] border border-white/10 overflow-y-auto'
+    <Dialog
+      open
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) handleClose();
+      }}
+    >
+      <DialogContent
+        className='max-w-110 max-h-[90vh] overflow-y-auto border border-(--neutral-border) bg-(--neutral-background) p-0 text-(--neutral-text)'
+        showCloseButton={false}
       >
-        {/* Header */}
-        <div className='flex items-center justify-between px-4 pt-4 pb-2'>
-          <span className='text-sm font-semibold text-white'>Review Swap</span>
+        <DialogHeader className='flex-row items-center justify-between border-b border-(--neutral-border) px-4 py-3'>
+          <DialogTitle className='text-base font-semibold text-(--neutral-text)'>
+            Review Swap
+          </DialogTitle>
           <button
             onClick={handleClose}
-            className='text-white/40 hover:text-white/80 text-lg leading-none'
+            className='inline-flex size-8 items-center justify-center rounded-full text-(--neutral-text-textWeak) hover:bg-(--neutral-background-hover) hover:text-(--neutral-text)'
+            aria-label='Close review'
           >
-            ✕
+            <X className='size-4' />
           </button>
-        </div>
+        </DialogHeader>
 
         <div className='flex flex-col gap-3 px-4 pb-4'>
-          {/* ── Swap summary ── */}
-          <div className='rounded-xl bg-white/5 border border-white/8 p-3'>
-            <div className='flex items-center justify-between'>
+          <div className='rounded-xl border border-(--neutral-border) bg-(--neutral-background-raised) p-3'>
+            <div className='flex items-center justify-between gap-3'>
               <div className='flex flex-col gap-0.5'>
-                <span className='text-white/40 text-[10px] uppercase tracking-wide'>You send</span>
-                <span className='text-white font-semibold text-base'>
+                <span className='text-xs uppercase tracking-wide text-(--neutral-text-textWeak)'>
+                  You send
+                </span>
+                <span className='text-base font-semibold text-(--neutral-text) font-mono'>
                   {fromFormatted} {fromSymbol}
                 </span>
                 {fromAmountUSD != null && (
-                  <span className='text-white/40 text-xs'>${fromAmountUSD.toFixed(2)}</span>
+                  <span className='text-white/40 text-xs'>
+                    ${fromAmountUSD.toFixed(2)}
+                  </span>
                 )}
               </div>
-              <span className='text-white/30 text-lg'>→</span>
-              <div className='flex flex-col gap-0.5 items-end'>
-                <span className='text-white/40 text-[10px] uppercase tracking-wide'>You receive</span>
-                <span className='text-white font-semibold text-base'>
+              <span className='text-lg text-(--neutral-text-textWeak)'>→</span>
+              <div className='flex flex-col items-end gap-0.5'>
+                <span className='text-xs uppercase tracking-wide text-(--neutral-text-textWeak)'>
+                  You receive
+                </span>
+                <span className='text-base font-semibold text-(--neutral-text) font-mono'>
                   {toFormatted} {toSymbol}
                 </span>
                 {toAmountUSD != null && (
-                  <span className='text-white/40 text-xs'>${toAmountUSD.toFixed(2)}</span>
+                  <span className='text-white/40 text-xs'>
+                    ${toAmountUSD.toFixed(2)}
+                  </span>
                 )}
               </div>
             </div>
@@ -146,9 +152,14 @@ function SwapReviewPanelInner({
           {/* ── Best Route ── */}
           <>
             {/* Best route badge + explanation */}
-            <div className='rounded-xl bg-white/5 border border-white/8 p-3'>
-              <div className='flex items-center gap-2 mb-2'>
-                <span className='text-xs bg-green-900/40 text-green-400 border border-green-700/40 rounded-full px-2 py-0.5'>
+            <div className='rounded-xl bg-white/5 border flex gap-2 flex-col border-white/8 p-3'>
+              <div className='flex items-center gap-2'>
+                <span
+                  className={cn(
+                    'rounded-full border border-(--neutral-border-sucess) bg-(--neutral-background-sucess) px-2 py-0.5 text-xs text-(--neutral-text-sucess)',
+                    jetBrainsMono.className,
+                  )}
+                >
                   #1 Best Route · {best.score}/100
                 </span>
                 {isCross && (
@@ -172,7 +183,11 @@ function SwapReviewPanelInner({
                     key={i}
                     protocol={step.protocol}
                     type={step.type}
-                    toSymbol={i === best.steps.length - 1 ? toSymbol : step.toToken.symbol}
+                    toSymbol={
+                      i === best.steps.length - 1
+                        ? toSymbol
+                        : step.toToken.symbol
+                    }
                     isLast={i === best.steps.length - 1}
                   />
                 ))}
@@ -180,25 +195,29 @@ function SwapReviewPanelInner({
             </div>
 
             {/* Fee breakdown */}
-            <div className='rounded-xl bg-white/5 border border-white/8 p-3 flex flex-col gap-1.5 text-xs'>
+            <div className='flex flex-col gap-1.5 rounded-xl border border-(--neutral-border) bg-(--neutral-background-raised) p-3 text-xs'>
               <Row label='Protocol' value={best.steps[0]?.protocol ?? '—'} />
               <Row label='Gas fee' value={`$${best.gasFeeUSD.toFixed(4)}`} />
               {isCross && (
-                <Row label='Bridge fee' value={`$${best.bridgeFeeUSD.toFixed(4)}`} />
-              )}
-              {best.protocolFeeUSD > 0 && (
-                <Row label='Protocol fee' value={`$${best.protocolFeeUSD.toFixed(4)}`} />
-              )}
-              {otherChargesUSD > 0.0001 && (
-                <Row label='Other charges' value={`$${otherChargesUSD.toFixed(4)}`} />
+                <Row
+                  label='Bridge fee'
+                  value={`$${best.bridgeFeeUSD.toFixed(4)}`}
+                />
               )}
               <div className='border-t border-white/10 my-1' />
-              <Row label='Net value' value={`$${best.netValueUSD.toFixed(4)}`} highlight />
+              <Row
+                label='Net value'
+                value={`$${best.netValueUSD.toFixed(4)}`}
+                highlight
+              />
               <Row
                 label='Min received'
                 value={`${formatAmount(best.minAmountOut, toDecimals)} ${toSymbol}`}
               />
-              <Row label='Slippage' value={`${(best.slippage * 100).toFixed(2)}%`} />
+              <Row
+                label='Slippage'
+                value={`${(best.slippage * 100).toFixed(2)}%`}
+              />
               {best.estimatedDurationMs > 0 && (
                 <Row
                   label='Est. time'
@@ -212,49 +231,54 @@ function SwapReviewPanelInner({
             </div>
           </>
 
-          {/* ── Sign result ── */}
           {signStep === 'signed' && signed && (
-            <div className='rounded-xl bg-green-900/20 border border-green-700/30 p-3 text-xs'>
-              <p className='text-green-400 font-semibold mb-1'>Intent signed</p>
-              <p className='text-white/40 mb-1'>Signature</p>
-              <p className='text-white/60 break-all font-mono'>{signed.signature}</p>
+            <div className='rounded-xl border border-(--neutral-border-sucess) bg-[color:color-mix(in_srgb,var(--neutral-background-sucess)_10%,transparent)] p-3 text-xs'>
+              <p className='mb-1 font-semibold text-(--neutral-text-sucess)'>
+                Intent signed
+              </p>
+              <p className='mb-1 text-(--neutral-text-textWeak)'>Signature</p>
+              <p className='break-all font-mono text-(--neutral-text-textWeak)'>
+                {signed.signature}
+              </p>
             </div>
           )}
 
           {signStep === 'error' && signError && (
-            <div className='rounded-xl bg-red-900/20 border border-red-700/30 p-3 text-xs text-red-400'>
+            <div className='rounded-xl border border-(--neutral-border-error) bg-[color:color-mix(in_srgb,var(--neutral-background-error)_10%,transparent)] p-3 text-xs text-(--neutral-text-error)'>
               {signError}
             </div>
           )}
 
-          {/* ── Action buttons ── */}
           {signStep !== 'signed' ? (
-            <button
+            <Button
               onClick={handleSign}
               disabled={signStep === 'signing'}
-              className='w-full rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-violet-600 hover:bg-violet-500 text-white'
+              className='w-full justify-center rounded-xl bg-[var(--swap-action-bg)] py-3 text-sm font-semibold text-[var(--swap-action-text)] transition-colors hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50'
             >
-              {signStep === 'signing' ? 'Waiting for wallet…' : 'Sign & Confirm'}
-            </button>
+              {signStep === 'signing'
+                ? 'Waiting for wallet…'
+                : 'Sign & Confirm'}
+            </Button>
           ) : (
-            <button
-              onClick={() => { onConfirm(); handleClose(); }}
-              className='w-full rounded-xl py-3 text-sm font-semibold bg-green-700 hover:bg-green-600 text-white transition-colors'
+            <Button
+              onClick={() => {
+                onConfirm();
+                handleClose();
+              }}
+              className='w-full justify-center rounded-xl border border-(--neutral-border-sucess)! bg-(--neutral-background-sucess)! py-3 text-sm font-semibold text-(--neutral-background)'
             >
               Done
-            </button>
+            </Button>
           )}
         </div>
-      </motion.div>
-    </>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// ── Route visualisation ─────────────────────────────────────────────────────
-
 function RouteToken({ symbol }: { symbol: string }) {
   return (
-    <span className='text-xs font-medium text-white bg-white/10 rounded-full px-2 py-0.5'>
+    <span className='rounded-full border border-(--neutral-border) bg-(--neutral-background) px-2 py-0.5 text-xs font-medium text-(--neutral-text)'>
       {symbol}
     </span>
   );
@@ -273,19 +297,17 @@ function RouteStep({
 }) {
   return (
     <>
-      <div className='flex items-center gap-1 mx-1'>
-        <span className='text-white/20 text-xs'>—</span>
-        <span className='text-[10px] text-white/40 bg-white/5 border border-white/10 rounded px-1.5 py-0.5'>
+      <div className='mx-1 flex items-center gap-1'>
+        <span className='text-xs text-(--neutral-text-textWeak)'>-</span>
+        <span className='rounded border border-(--neutral-border) bg-(--neutral-background) px-1.5 py-1 text-[10px] leading-3 text-(--neutral-text-textWeak)'>
           {protocol || type}
         </span>
-        <span className='text-white/20 text-xs'>→</span>
+        <span className='text-xs text-(--neutral-text-textWeak)'>{'>'}</span>
       </div>
       {isLast && <RouteToken symbol={toSymbol} />}
     </>
   );
 }
-
-// ── Row helpers ─────────────────────────────────────────────────────────────
 
 function Row({
   label,
@@ -297,9 +319,17 @@ function Row({
   highlight?: boolean;
 }) {
   return (
-    <div className='flex justify-between'>
-      <span className='text-white/40'>{label}</span>
-      <span className={highlight ? 'text-white font-medium' : 'text-white/70'}>{value}</span>
+    <div className='flex justify-between gap-2'>
+      <span className='text-(--neutral-text-textWeak)'>{label}</span>
+      <span
+        className={
+          highlight
+            ? 'font-medium text-(--neutral-text)'
+            : 'text-(--neutral-text-textWeak)'
+        }
+      >
+        {value}
+      </span>
     </div>
   );
 }
