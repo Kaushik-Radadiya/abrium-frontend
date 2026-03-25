@@ -180,6 +180,13 @@ export function useTokenPairForm({ onInvalidate }: Params = {}) {
     refetchIntervalMs: 300_000,
   });
 
+  const { usdValue: toOneTokenUsd } = useTokenUsdValue({
+    chainId: toChainId,
+    tokenAddress: selectedToToken?.address ?? null,
+    amount: '1',
+    refetchIntervalMs: 300_000,
+  });
+
   const { usdValue: toAmountUsdValue } = useTokenUsdValue({
     chainId: toChainId,
     tokenAddress: selectedToToken?.address ?? null,
@@ -396,6 +403,7 @@ export function useTokenPairForm({ onInvalidate }: Params = {}) {
     // USD values
     fromAmountUsdValue,
     fromOneTokenUsd,
+    toOneTokenUsd,
     toAmountUsdValue,
 
     // selector modal
