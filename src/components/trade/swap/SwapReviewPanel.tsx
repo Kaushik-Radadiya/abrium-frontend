@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { motion } from 'framer-motion';
+
 import { Button } from '@/components/ui/Button';
 
 import {
@@ -93,20 +95,26 @@ function SwapReviewPanelInner({
   const toFormatted = formatAmount(best.toAmount, toDecimals);
 
   return (
-    <Dialog
-      open
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) handleClose();
-      }}
-    >
-      <DialogContent
-        className='max-w-110 max-h-[90vh] overflow-y-auto border border-(--neutral-border) bg-(--neutral-background) p-0 text-(--neutral-text)'
-        showCloseButton={false}
+    <>
+      <motion.div
+        key='review-backdrop'
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        className='bg-black/70 duration-100 fixed inset-0 isolate z-50'
+        onClick={handleClose}
+      />
+      <motion.div
+        key='review-panel'
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        className='fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-110 max-h-[90vh] overflow-y-auto border border-(--neutral-border) bg-(--neutral-background) p-0 text-(--neutral-text) flex flex-col rounded-t-2xl sm:rounded-2xl sm:inset-x-0 sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2'
       >
-        <DialogHeader className='flex-row items-center justify-between border-b border-(--neutral-border) px-4 py-3'>
-          <DialogTitle className='text-base font-semibold text-(--neutral-text)'>
-            Review Swap
-          </DialogTitle>
+        <div className='flex justify-between items-center p-4'>
+          Review Swap
           <button
             onClick={handleClose}
             className='inline-flex size-8 items-center justify-center rounded-full text-(--neutral-text-textWeak) hover:bg-(--neutral-background-hover) hover:text-(--neutral-text)'
@@ -114,8 +122,7 @@ function SwapReviewPanelInner({
           >
             <X className='size-4' />
           </button>
-        </DialogHeader>
-
+        </div>
         <div className='flex flex-col gap-3 px-4 pb-4'>
           <div className='rounded-xl border border-(--neutral-border) bg-(--neutral-background-raised) p-3'>
             <div className='flex items-center justify-between gap-3'>
@@ -271,8 +278,8 @@ function SwapReviewPanelInner({
             </Button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </motion.div>
+    </>
   );
 }
 
