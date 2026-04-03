@@ -2,6 +2,7 @@ import type { UiToken } from '@/lib/tokens';
 import type { SecurityLevel } from '@/lib/api';
 import type { WalletSelection } from '@/lib/receive-wallet';
 import type { SupportedChain } from '@/lib/chains';
+import type { SwapQuoteResponsePayload } from '@/lib/quotes.types';
 
 type RuntimeNetwork = {
   chain: SupportedChain;
@@ -36,6 +37,9 @@ export type SwapWorkspaceViewModel = {
   riskReasons?: string[] | null;
   shouldEnforceDangerGuard: boolean;
   quoteErrorMessage: string | null;
+  rateQuote?: SwapQuoteResponsePayload | null;
+  isRateLoading: boolean;
+  rateErrorMessage: string | null;
   primaryWallet: unknown;
   user: unknown;
   hasTokenSelection: boolean;

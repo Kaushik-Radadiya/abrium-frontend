@@ -1,10 +1,13 @@
 'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { NAV_ITEMS } from '@/lib/constant/sidebar-menu';
 import { FileText } from 'lucide-react';
 import { ShimmerImage } from '@/components/ui/ShimmerImage';
 
 export function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="flex h-screen min-[1440px]:min-w-[302px] flex-col justify-between border-r border-(--neutral-border) p-4 text-(--text) bg-(--panel)">
       <div>
@@ -29,7 +32,12 @@ export function Sidebar() {
         <nav>
           <ul className="flex flex-col gap-2">
             {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
-              const isActive = label === 'Swap';
+              const isActive =
+                href !== '#' &&
+                (pathname === href ||
+                  pathname.startsWith(`${href}/`) ||
+                  (href === '/swap' && pathname === '/'));
+
               return (
                 <li key={label}>
                   <Link

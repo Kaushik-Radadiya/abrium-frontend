@@ -9,7 +9,7 @@ import { formatApproxUsd } from '@/lib/formatAmount';
 import { OverflowTooltipText } from '@/components/ui/OverflowTooltipText';
 import type { SecurityLevel } from '@/lib/api';
 import type { WalletSelection } from '@/lib/receive-wallet';
-import { RECEIVE_AMOUNT_FORMATTER } from '@/lib/constant/swap';
+import { RECEIVE_AMOUNT_FORMATTER } from '@/lib/constant/trade';
 
 type Props = {
   label: string;

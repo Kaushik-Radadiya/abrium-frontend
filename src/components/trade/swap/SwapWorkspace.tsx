@@ -117,6 +117,57 @@ export function SwapWorkspace() {
     [routeError],
   );
 
+  const rateAmount = useMemo(() => {
+    if (quoteAmount && quoteAmount !== '0') return quoteAmount;
+    if (!selectedFromToken) return null;
+    try {
+      return (BigInt(10) ** BigInt(selectedFromToken.decimals)).toString();
+    } catch {
+      return null;
+    }
+  }, [quoteAmount, selectedFromToken]);
+
+  const rateQuoteRequest = useMemo<SwapQuoteRequestPayload | null>(() => {
+    if (
+      !form.hasReviewed ||
+      !selectedFromToken ||
+      !selectedToToken ||
+      !rateAmount ||
+      shouldEnforceDangerGuard
+    )
+      return null;
+    return buildSwapQuoteRequest({
+      amount: rateAmount,
+      fromChainId,
+      fromTokenAddress: selectedFromToken.address,
+      toChainId,
+      toTokenAddress: selectedToToken.address,
+      receiveWalletAddress,
+      swapperAddress: normalizedSwapper,
+    });
+  }, [
+    form.hasReviewed,
+    selectedFromToken,
+    selectedToToken,
+    rateAmount,
+    shouldEnforceDangerGuard,
+    fromChainId,
+    toChainId,
+    receiveWalletAddress,
+    normalizedSwapper,
+  ]);
+
+  const {
+    data: rateQuote,
+    error: rateQuoteError,
+    isFetching: isRateFetching,
+  } = useSwapQuote({ request: rateQuoteRequest });
+
+  const rateErrorMessage = useMemo(
+    () => getQuoteErrorMessage(rateQuoteError),
+    [rateQuoteError],
+  );
+
   const shouldShowQuote =
     hasTokenSelection &&
     form.hasReviewed &&
@@ -231,6 +282,9 @@ export function SwapWorkspace() {
             riskReasons={risk?.reasons}
             shouldEnforceDangerGuard={shouldEnforceDangerGuard}
             quoteErrorMessage={quoteErrorMessage}
+            rateQuote={rateQuote}
+            isRateLoading={isRateFetching}
+            rateErrorMessage={rateErrorMessage}
             primaryWallet={primaryWallet}
             user={user}
             hasTokenSelection={hasTokenSelection}

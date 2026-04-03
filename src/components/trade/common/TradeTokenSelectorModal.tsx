@@ -254,7 +254,7 @@ export function TradeTokenSelectorModal({
   if (!open) return null;
 
   return (
-    <div className='flex relative h-full items-start w-full min-h-0 mx-auto min-[1441px]:min-w-117 xl:max-w-110 min-[1441px]:max-w-max sm:max-w-90'>
+    <div className='flex relative h-full items-start w-full'>
       <div className='border w-full border-[var(--neutral-border)] rounded-2xl bg-[var(--neutral-background)] text-[var(--neutral-text)]'>
         {/* Header */}
         <div className='sticky top-0 z-20 flex items-center gap-3 py-4 px-3 rounded-tl-2xl rounded-tr-2xl bg-[var(--neutral-background)]'>

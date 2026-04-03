@@ -1,7 +1,7 @@
 'use client';
 
 import { ChartCandlestick } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/Button';
 import {
   Select,
@@ -13,23 +13,15 @@ import {
 } from '@/components/ui/select';
 import { TRADE_OPTIONS } from '@/lib/constant/trade';
 import AdvancedSettingsPanel from './AdvancedSettingsPanel';
+import ViewOrderSheet from './ViewOrderSheet';
 
 const TradeTopPanel = () => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const currentMode = pathname?.includes('/limit') ? 'limit' : 'swap';
-
   return (
     <div className='flex items-center justify-between mb-6'>
       <div>
-        <Select
-          value={currentMode}
-          onValueChange={(mode) => {
-            router.push(mode === 'limit' ? '/limit' : '/swap');
-          }}
-        >
+        <Select defaultValue='swap'>
           <SelectTrigger className='w-full'>
-            <SelectValue placeholder='Select a fruit' />
+            <SelectValue placeholder='Select a trade' />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -43,7 +35,12 @@ const TradeTopPanel = () => {
         </Select>
       </div>
       <div className='flex items-center leading-base gap-2'>
-        <Button>View Orders</Button>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button>View Orders</Button>
+          </SheetTrigger>
+          <ViewOrderSheet />
+        </Sheet>
         <Button variant='icon'>
           <ChartCandlestick size={16} />
         </Button>

@@ -1,5 +1,5 @@
 import { createConfig, getQuote, getRoutes } from '@lifi/sdk';
-import type { LiFiStep, Step } from '@lifi/types';
+import type { LiFiStep, RoutesRequest, Step } from '@lifi/types';
 import {
   normalizeQuote,
   rankRoutes,
@@ -179,12 +179,26 @@ function mapSdkQuote(
   };
 }
 
+export async function fetchRoutes(payload: SwapQuoteRequestPayload) {
+  const routesRequest: RoutesRequest = {
+    fromChainId: payload.tokenInChainId,
+    toChainId: payload.tokenOutChainId,
+    fromTokenAddress: toApiTokenAddress(payload.tokenIn),
+    toTokenAddress: toApiTokenAddress(payload.tokenOut),
+    fromAmount: payload.amount,
+  };
+
+  const result = await getRoutes(routesRequest);
+  return result.routes;
+}
+
 export async function fetchSwapQuote(
   payload: SwapQuoteRequestPayload,
 ): Promise<SwapQuoteResponsePayload> {
   const slippage = normalizeSlippage(payload.slippage);
   const recipient = payload.recipient ?? payload.swapper;
-
+  const routes = await fetchRoutes(payload);
+  console.log('routes+++++', routes);
   try {
     const step = await getQuote({
       fromChain: payload.tokenInChainId,
@@ -197,7 +211,9 @@ export async function fetchSwapQuote(
       ...(slippage !== undefined ? { slippage } : {}),
     });
 
-    return mapSdkQuote(step, payload.swapper, recipient);
+    const quote = mapSdkQuote(step, payload.swapper, recipient);
+    console.log('quote+++++', quote);
+    return quote;
   } catch (err) {
     if (isHttpError(err)) {
       await err.buildAdditionalDetails?.().catch(() => {});

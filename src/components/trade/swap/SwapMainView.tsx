@@ -7,6 +7,7 @@ import { TradeReceivePanel } from '@/components/trade/common/TradeReceivePanel';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { SwapWorkspaceViewModel } from '@/types/trade/workspace';
+import SwapTransactionPanel from '@/components/swap/SwapTransactionPanel';
 
 export function SwapMainView({
   fromAmount,
@@ -29,6 +30,9 @@ export function SwapMainView({
   riskReasons,
   shouldEnforceDangerGuard,
   quoteErrorMessage,
+  rateQuote,
+  isRateLoading,
+  rateErrorMessage,
   primaryWallet,
   user,
   hasTokenSelection,
@@ -119,7 +123,13 @@ export function SwapMainView({
           <span>{quoteErrorMessage}</span>
         </div>
       )}
-
+      <SwapTransactionPanel
+        fromToken={selectedFromToken}
+        toToken={selectedToToken}
+        quote={rateQuote}
+        isRateLoading={isRateLoading}
+        rateErrorMessage={rateErrorMessage}
+      />
       <Button
         className={cn(
           'rounded-full justify-center border border-transparent bg-[var(--swap-action-bg)] px-4 py-3 font-medium text-[var(--swap-action-text)] text-base',

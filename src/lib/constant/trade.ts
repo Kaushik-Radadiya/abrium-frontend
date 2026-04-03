@@ -30,8 +30,8 @@ export const RECEIVE_AMOUNT_FORMATTER = new Intl.NumberFormat('en-US', {
   useGrouping: false,
 });
 
-export const CHANGE_POSITIVE_CLASS = 'text-[#00ff00b3]';
-export const CHANGE_NEGATIVE_CLASS = 'text-[#ff3b30b3]';
+export const CHANGE_POSITIVE_CLASS = 'text-(--neutral-text-sucess)';
+export const CHANGE_NEGATIVE_CLASS = 'text-(--neutral-text-error)';
 
 export type PerformanceRow = {
   label: string;
@@ -66,3 +66,9 @@ export const TOKEN_PERFORMANCE_ROW_CONFIG = [
 export const PRICE_PRESET_OPTIONS = ['Market', '+1%', '+5%', '+10%'] as const;
 
 export const EXPIRY_OPTIONS = ['1 day', '1 week', '1 month', '1 year'] as const;
+
+export const STATUS = [
+  { label: 'Completed', value: 'completed' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Failed', value: 'failed' },
+];
