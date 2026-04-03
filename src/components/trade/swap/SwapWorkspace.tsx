@@ -108,9 +108,7 @@ export function SwapWorkspace() {
     data: bestRoute,
     error: routeError,
     isFetching: isBestRouteFetching,
-  } = useRankedRoutesQuery(
-    hasReviewedQuote ? currentRouteRequest : null,
-  );
+  } = useRankedRoutesQuery(hasReviewedQuote ? currentRouteRequest : null);
 
   const quoteErrorMessage = useMemo(
     () => getQuoteErrorMessage(routeError),
@@ -267,6 +265,7 @@ export function SwapWorkspace() {
           />
         )}
       </AnimatePresence>
+
       <SecurityRiskModal
         open={showDangerModal}
         onOpenChange={setShowDangerModal}

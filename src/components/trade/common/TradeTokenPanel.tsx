@@ -9,7 +9,7 @@ import { formatApproxUsd } from '@/lib/formatAmount';
 import { OverflowTooltipText } from '@/components/ui/OverflowTooltipText';
 import type { SecurityLevel } from '@/lib/api';
 import type { WalletSelection } from '@/lib/receive-wallet';
-import { RECEIVE_AMOUNT_FORMATTER } from '@/lib/constant/swap';
+import { RECEIVE_AMOUNT_FORMATTER } from '@/lib/constant/trade';
 
 type Props = {
   label: string;
@@ -180,10 +180,14 @@ export function TradeTokenPanel({
                     {impactPctLabel ? (
                       <span
                         className='text-xs shrink-0 cursor-pointer'
-                        onMouseEnter={() => impactDollarTooltip && setShowDollar(true)}
+                        onMouseEnter={() =>
+                          impactDollarTooltip && setShowDollar(true)
+                        }
                         onMouseLeave={() => setShowDollar(false)}
                       >
-                        {showDollar && impactDollarTooltip ? impactDollarTooltip : impactPctLabel}
+                        {showDollar && impactDollarTooltip
+                          ? impactDollarTooltip
+                          : impactPctLabel}
                       </span>
                     ) : null}
                   </div>
